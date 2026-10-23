@@ -105,3 +105,23 @@ MIT License — free to use, modify, and distribute.
 LifeLink believes that **no one should die waiting for blood**. Every registered donor is a potential lifesaver. Every second saved is a life gained.
 
 **Made with ❤️ for humanity.**
+
+---
+
+## 🧾 Technical Debt / Future Work
+
+Notes from a **Deep Multi-Agent Audit** performed with the **nexus-core** council
+(members: profiler, analyst, critic). Verdict: `reject` (score 0.15). Tracked in
+[Issue #1](https://github.com/tibatechapp-ship-it/lifelink-app/issues/1).
+
+- [ ] **Authentication / Authorization** for the APIs (protect donor & patient privacy).
+- [ ] **Migrate SQLite → PostgreSQL** for scalability under high concurrency.
+- [ ] **Rate Limiting** to prevent abuse / DDoS on public endpoints.
+- [ ] Pagination on list endpoints.
+- [ ] CSRF protection for browser forms.
+
+### Already addressed
+- Input validation (ranges, enums, regex) on all donor/emergency endpoints.
+- XSS escaping in templates via `esc()`.
+- DB indexes on `blood_type`, `city`, `status`, `urgency` + composite indexes.
+- Timezone-aware UTC timestamps (`datetime.now(timezone.utc)`).
