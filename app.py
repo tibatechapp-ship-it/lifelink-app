@@ -14,7 +14,12 @@ def create_app():
     app = Flask(__name__)
     app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "lifelink-dev-secret-change-in-prod")
+    secret = os.environ.get("SECRET_KEY")
+    if not secret:
+        import warnings
+        warnings.warn("SECRET_KEY not set; using insecure dev default. Set SECRET_KEY in production.", stacklevel=2)
+        secret = "lifelink-dev-secret-change-in-prod"
+    app.config["SECRET_KEY"] = secret
 
     db.init_app(app)
 
@@ -47,4 +52,5 @@ def create_app():
 app = create_app()
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    debug = os.environ.get("FLASK_DEBUG", "0") == "1"
+    app.run(host=os.environ.get("HOST", "127.0.0.1"), port=int(os.environ.get("PORT", "5000")), debug=debug)

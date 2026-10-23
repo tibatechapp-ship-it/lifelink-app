@@ -107,9 +107,9 @@
             <span class="font-bold text-lg">${r.blood_type}</span>
             <span class="text-xs px-2 py-1 rounded-full ${r.urgency==='critical'?'bg-blood-100 text-blood-700':r.urgency==='urgent'?'bg-blood-50 text-blood-600':'bg-hope-100 text-hope-600'}">${r.urgency}</span>
           </div>
-          <div class="text-gray-700 font-medium">${r.patient_name}</div>
-          <div class="text-sm text-gray-500 mt-1">🏥 ${r.hospital} — ${r.city}</div>
-          <div class="text-sm text-gray-500">📞 ${r.contact_phone} · ${r.units_needed} وحدة</div>
+          <div class="text-gray-700 font-medium">${esc(r.patient_name)}</div>
+          <div class="text-sm text-gray-500 mt-1">🏥 ${esc(r.hospital)} — ${esc(r.city)}</div>
+          <div class="text-sm text-gray-500">📞 ${esc(r.contact_phone)} · ${r.units_needed} وحدة</div>
         </div>
       `).join('');
     } catch(e){ document.getElementById('previewList').innerHTML = '<div class="text-red-500">تعذر التحميل</div>'; }

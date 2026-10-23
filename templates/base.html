@@ -91,6 +91,8 @@
   </footer>
 
   <script>
+    // Safe HTML escaping for any user-controlled value rendered via innerHTML.
+    function esc(v){ return String(v == null ? '' : v).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
     document.getElementById('menuBtn')?.addEventListener('click', () => {
       document.getElementById('mobileMenu').classList.toggle('hidden');
     });

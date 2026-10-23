@@ -92,7 +92,7 @@
     const data = await res.json();
     const list = document.getElementById('list');
     const empty = document.getElementById('empty');
-    if (!data.requests.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+    if (!data.requests.length) { list.innerHTML=; empty.classList.remove('hidden'); return; }
     empty.classList.add('hidden');
     list.innerHTML = data.requests.map(r => `
       <div class="bg-white rounded-2xl p-5 shadow card-hover border-t-4 ${r.urgency==='critical'?'border-blood-700':r.urgency==='urgent'?'border-blood-500':'border-hope-500'}">
@@ -100,18 +100,18 @@
           <span class="text-2xl font-black text-blood-700">${r.blood_type}</span>
           <span class="text-xs px-2 py-1 rounded-full font-bold ${r.urgency==='critical'?'bg-blood-100 text-blood-700':r.urgency==='urgent'?'bg-orange-100 text-orange-700':'bg-hope-100 text-hope-600'}">${r.urgency==='critical'?'حرجة':r.urgency==='urgent'?'عاجلة':'عادية'}</span>
         </div>
-        <div class="font-bold text-gray-800">${r.patient_name}</div>
-        <div class="text-sm text-gray-500 mt-1">🏥 ${r.hospital}</div>
-        <div class="text-sm text-gray-500">📍 ${r.city}</div>
-        <div class="text-sm text-gray-500">📞 ${r.contact_phone}</div>
+        <div class="font-bold text-gray-800">${esc(r.patient_name)}</div>
+        <div class="text-sm text-gray-500 mt-1">🏥 ${esc(r.hospital)}</div>
+        <div class="text-sm text-gray-500">📍 ${esc(r.city)}</div>
+        <div class="text-sm text-gray-500">📞 ${esc(r.contact_phone)}</div>
         <div class="text-sm text-gray-500">📦 ${r.units_needed} وحدة · ${r.status}</div>
-        ${r.notes ? '<div class="text-sm text-gray-400 mt-2 italic">'+r.notes+'</div>' : ''}
+        ${r.notes ? '<div class="text-sm text-gray-400 mt-2 italic">'+esc(r.notes)+'</div>' : ''}
         <div class="flex gap-2 mt-3">
-          ${r.status==='open' ? `<button onclick="fulfill(${r.id})" class="text-xs px-3 py-1 rounded-full bg-hope-100 text-hope-600 font-bold hover:bg-hope-200 transition">✅ تم التلبية</button>` : ''}
+          ${r.status==='open' ? `<button onclick="fulfill(${r.id})" class="text-xs px-3 py-1 rounded-full bg-hope-100 text-hope-600 font-bold hover:bg-hope-200 transition">✅ تم التلبية</button>` : }
           <button onclick="removeReq(${r.id})" class="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition">🗑 حذف</button>
         </div>
       </div>
-    `).join('');
+    `).join();
   }
 
   async function fulfill(id) {

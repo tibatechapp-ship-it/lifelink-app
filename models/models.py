@@ -9,10 +9,13 @@ db = SQLAlchemy()
 class Donor(db.Model):
     """A registered blood donor."""
     __tablename__ = "donors"
+    __table_args__ = (
+        db.Index("ix_donors_blood_city_avail", "blood_type", "city", "available"),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
     phone = db.Column(db.String(30), nullable=False)
     blood_type = db.Column(db.String(5), nullable=False, index=True)
     city = db.Column(db.String(80), nullable=False, index=True)
@@ -41,6 +44,9 @@ class Donor(db.Model):
 class EmergencyRequest(db.Model):
     """An urgent blood request."""
     __tablename__ = "emergency_requests"
+    __table_args__ = (
+        db.Index("ix_emerg_blood_city_status", "blood_type", "city", "status"),
+    )
 
     id = db.Column(db.Integer, primary_key=True)
     patient_name = db.Column(db.String(120), nullable=False)
@@ -49,8 +55,8 @@ class EmergencyRequest(db.Model):
     hospital = db.Column(db.String(150), nullable=False)
     city = db.Column(db.String(80), nullable=False, index=True)
     contact_phone = db.Column(db.String(30), nullable=False)
-    urgency = db.Column(db.String(20), default="urgent", nullable=False)  # critical/urgent/normal
-    status = db.Column(db.String(20), default="open", nullable=False)  # open/fulfilled/closed
+    urgency = db.Column(db.String(20), default="urgent", nullable=False, index=True)  # critical/urgent/normal
+    status = db.Column(db.String(20), default="open", nullable=False, index=True)  # open/fulfilled/closed
     notes = db.Column(db.Text, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
