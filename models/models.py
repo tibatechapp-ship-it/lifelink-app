@@ -1,7 +1,7 @@
 """SQLAlchemy models for LifeLink."""
 
 from flask_sqlalchemy import SQLAlchemy
-from datetime import datetime
+from datetime import datetime, timezone
 
 db = SQLAlchemy()
 
@@ -23,7 +23,7 @@ class Donor(db.Model):
     weight = db.Column(db.Float, nullable=False)
     last_donation = db.Column(db.DateTime, nullable=True)
     available = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     def to_dict(self):
         return {
@@ -58,7 +58,7 @@ class EmergencyRequest(db.Model):
     urgency = db.Column(db.String(20), default="urgent", nullable=False, index=True)  # critical/urgent/normal
     status = db.Column(db.String(20), default="open", nullable=False, index=True)  # open/fulfilled/closed
     notes = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
     def to_dict(self):
         return {
