@@ -1,0 +1,1 @@
+"""LifeLink route blueprints."""

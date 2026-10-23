@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block title %}LifeLink — تسجيل متبرع{% endblock %}
+
+{% block content %}
+<section class="max-w-3xl mx-auto px-4 py-12">
+  <div class="bg-white rounded-3xl shadow-2xl p-8 sm:p-12">
+    <div class="text-center mb-8">
+      <div class="text-5xl mb-3">🤝</div>
+      <h1 class="text-3xl sm:text-4xl font-black text-blood-700">سجّل كمتبرع</h1>
+      <p class="text-gray-600 mt-2">انضم إلى شبكة LifeLink وكن سبباً في إنقاذ حياة.</p>
+    </div>
+
+    <form id="donorForm" class="space-y-5">
+      <div class="grid sm:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-sm font-bold mb-1">الاسم الكامل *</label>
+          <input name="name" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="أحمد محمد">
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1">البريد الإلكتروني *</label>
+          <input name="email" type="email" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="ahmed@example.com">
+        </div>
+      </div>
+      <div class="grid sm:grid-cols-2 gap-5">
+        <div>
+          <label class="block text-sm font-bold mb-1">رقم الهاتف *</label>
+          <input name="phone" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="+964 7XX XXX XXXX">
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1">فصيلة الدم *</label>
+          <select name="blood_type" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition">
+            <option value="">اختر فصيلة الدم</option>
+            <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+          </select>
+        </div>
+      </div>
+      <div class="grid sm:grid-cols-3 gap-5">
+        <div>
+          <label class="block text-sm font-bold mb-1">المدينة *</label>
+          <input name="city" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="بغداد">
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1">العمر *</label>
+          <input name="age" type="number" min="18" max="65" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="25">
+        </div>
+        <div>
+          <label class="block text-sm font-bold mb-1">الوزن (كغ) *</label>
+          <input name="weight" type="number" min="50" step="0.1" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="70">
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <input type="checkbox" name="available" id="available" checked class="w-5 h-5 accent-blood-600">
+        <label for="available" class="text-sm">أنا متاح للتبرع حالياً</label>
+      </div>
+      <button type="submit" class="w-full py-4 rounded-xl bg-blood-600 text-white font-bold text-lg shadow-lg shadow-red-200 hover:bg-blood-700 transition transform hover:scale-[1.02]">
+        🤝 سجّل الآن
+      </button>
+    </form>
+
+    <div id="result" class="mt-6 hidden"></div>
+  </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  document.getElementById('donorForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const form = e.target;
+    const data = Object.fromEntries(new FormData(form));
+    data.age = parseInt(data.age);
+    data.weight = parseFloat(data.weight);
+    data.available = form.available.checked;
+    const res = await fetch('/api/donors', {
+      method: 'POST',
+      headers: {'Content-Type':'application/json'},
+      body: JSON.stringify(data)
+    });
+    const json = await res.json();
+    const box = document.getElementById('result');
+    box.classList.remove('hidden');
+    if (res.ok) {
+      box.className = 'mt-6 p-4 rounded-xl bg-hope-100 text-hope-600 font-bold';
+      box.innerHTML = '✅ تم التسجيل بنجاح! معرفك: ' + json.id + ' — فصيلة دمك: ' + json.blood_type;
+      form.reset();
+    } else {
+      box.className = 'mt-6 p-4 rounded-xl bg-blood-100 text-blood-700 font-bold';
+      box.innerHTML = '❌ ' + (json.error || 'حدث خطأ');
+    }
+  });
+</script>
+{% endblock %}

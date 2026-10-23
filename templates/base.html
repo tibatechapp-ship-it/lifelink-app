@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}LifeLink — شبكة إنقاذ وتبرع بالدم{% endblock %}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@300;400;500;700;800;900&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Tajawal', 'sans-serif'] },
+          colors: {
+            blood: { 50:'#fef2f2',100:'#fee2e2',200:'#fecaca',300:'#fca5a5',400:'#f87171',500:'#ef4444',600:'#dc2626',700:'#b91c1c',800:'#991b1b',900:'#7f1d1d' },
+            hope: { 50:'#f0fdf4',100:'#dcfce7',500:'#22c55e',600:'#16a34a' }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body { font-family: 'Tajawal', sans-serif; }
+    .glass { background: rgba(255,255,255,0.85); backdrop-filter: blur(12px); }
+    .hero-gradient { background: linear-gradient(135deg, #7f1d1d 0%, #dc2626 40%, #f87171 100%); }
+    .pulse-ring { animation: pulseRing 2s cubic-bezier(0.4,0,0.6,1) infinite; }
+    @keyframes pulseRing { 0%,100%{transform:scale(1);opacity:1} 50%{transform:scale(1.15);opacity:.7} }
+    .float-up { animation: floatUp .6s ease-out both; }
+    @keyframes floatUp { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+    .card-hover { transition: transform .3s ease, box-shadow .3s ease; }
+    .card-hover:hover { transform: translateY(-6px); box-shadow: 0 20px 40px -10px rgba(220,38,38,.25); }
+    .urgency-critical { background: linear-gradient(90deg,#7f1d1d,#dc2626); }
+    .urgency-urgent { background: linear-gradient(90deg,#b91c1c,#ef4444); }
+    .urgency-normal { background: linear-gradient(90deg,#16a34a,#22c55e); }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased">
+  <!-- Navbar -->
+  <nav class="glass fixed top-0 inset-x-0 z-50 border-b border-red-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <a href="/" class="flex items-center gap-2">
+          <span class="text-3xl">🩸</span>
+          <span class="text-2xl font-black text-blood-700">LifeLink</span>
+        </a>
+        <div class="hidden md:flex items-center gap-6 font-medium">
+          <a href="/" class="hover:text-blood-600 transition">الرئيسية</a>
+          <a href="/emergencies" class="hover:text-blood-600 transition">حالات عاجلة</a>
+          <a href="/register" class="px-5 py-2 rounded-full bg-blood-600 text-white hover:bg-blood-700 transition shadow-lg shadow-red-200">سجل كمتبرع</a>
+        </div>
+        <button id="menuBtn" class="md:hidden text-blood-700 text-2xl">☰</button>
+      </div>
+    </div>
+    <div id="mobileMenu" class="hidden md:hidden px-4 pb-4 space-y-2 bg-white border-t">
+      <a href="/" class="block py-2 hover:text-blood-600">الرئيسية</a>
+      <a href="/emergencies" class="block py-2 hover:text-blood-600">حالات عاجلة</a>
+      <a href="/register" class="block py-2 text-blood-600 font-bold">سجل كمتبرع</a>
+    </div>
+  </nav>
+
+  <main class="pt-16">
+    {% block content %}{% endblock %}
+  </main>
+
+  <!-- Footer -->
+  <footer class="bg-blood-900 text-white mt-20">
+    <div class="max-w-7xl mx-auto px-4 py-10 grid md:grid-cols-3 gap-8">
+      <div>
+        <div class="flex items-center gap-2 mb-3"><span class="text-2xl">🩸</span><span class="text-xl font-bold">LifeLink</span></div>
+        <p class="text-red-200 text-sm">شبكة إنقاذ وتبرع بالدم — لأن كل قطرة دم قد تنقذ روحاً.</p>
+      </div>
+      <div>
+        <h4 class="font-bold mb-3">روابط سريعة</h4>
+        <ul class="space-y-1 text-red-200 text-sm">
+          <li><a href="/" class="hover:text-white">الرئيسية</a></li>
+          <li><a href="/register" class="hover:text-white">تسجيل المتبرعين</a></li>
+          <li><a href="/emergencies" class="hover:text-white">حالات عاجلة</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4 class="font-bold mb-3">إحصائيات</h4>
+        <p class="text-red-200 text-sm">🩸 متبرعون مسجلون: <span id="statDonors">—</span></p>
+        <p class="text-red-200 text-sm">🚨 حالات عاجلة مفتوحة: <span id="statOpen">—</span></p>
+      </div>
+    </div>
+    <div class="border-t border-red-800 text-center py-4 text-red-300 text-xs">
+      © 2026 LifeLink — صُنع بـ ❤️ لإنقاذ الأرواح
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('menuBtn')?.addEventListener('click', () => {
+      document.getElementById('mobileMenu').classList.toggle('hidden');
+    });
+    // footer stats
+    fetch('/api/donors').then(r=>r.json()).then(d=>{ const el=document.getElementById('statDonors'); if(el) el.textContent=d.count; }).catch(()=>{});
+    fetch('/api/emergencies/open').then(r=>r.json()).then(d=>{ const el=document.getElementById('statOpen'); if(el) el.textContent=d.count; }).catch(()=>{});
+  </script>
+  {% block extra_scripts %}{% endblock %}
+</body>
+</html>

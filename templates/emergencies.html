@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+{% block title %}LifeLink — حالات عاجلة{% endblock %}
+
+{% block content %}
+<section class="max-w-7xl mx-auto px-4 py-10">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
+    <div>
+      <h1 class="text-3xl sm:text-4xl font-black text-blood-700">🚨 حالات عاجلة</h1>
+      <p class="text-gray-600 mt-1">قائمة طلبات الدم المفتوحة — كل ثانية تهم.</p>
+    </div>
+    <button onclick="openNewReq()" class="px-6 py-3 rounded-full bg-blood-600 text-white font-bold shadow-lg shadow-red-200 hover:bg-blood-700 transition">
+      + نداء استغاثة جديد
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="bg-white rounded-2xl shadow p-4 mb-6 flex flex-wrap gap-3 items-center">
+    <select id="fBlood" class="px-3 py-2 rounded-lg border border-gray-200">
+      <option value="">كل الفصائل</option>
+      <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+      <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+    </select>
+    <input id="fCity" placeholder="المدينة" class="px-3 py-2 rounded-lg border border-gray-200">
+    <select id="fUrgency" class="px-3 py-2 rounded-lg border border-gray-200">
+      <option value="">كل المستويات</option>
+      <option value="critical">حرجة</option>
+      <option value="urgent">عاجلة</option>
+      <option value="normal">عادية</option>
+    </select>
+    <select id="fStatus" class="px-3 py-2 rounded-lg border border-gray-200">
+      <option value="open">مفتوحة</option>
+      <option value="">الكل</option>
+      <option value="fulfilled">تم التلبية</option>
+      <option value="closed">مغلقة</option>
+    </select>
+    <button onclick="loadList()" class="px-5 py-2 rounded-lg bg-blood-600 text-white font-bold hover:bg-blood-700 transition">بحث</button>
+  </div>
+
+  <div id="list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <div id="empty" class="hidden text-center py-16 text-gray-500 text-lg">لا توجد حالات مطابقة 🎉</div>
+</section>
+
+<!-- New request modal -->
+<div id="modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+  <div class="bg-white rounded-3xl max-w-lg w-full p-8 max-h-[90vh] overflow-y-auto">
+    <div class="flex justify-between items-center mb-6">
+      <h2 class="text-2xl font-black text-blood-700">🚨 نداء استغاثة جديد</h2>
+      <button onclick="closeModal()" class="text-2xl text-gray-400 hover:text-gray-600">✕</button>
+    </div>
+    <form id="reqForm" class="space-y-4">
+      <input name="patient_name" required placeholder="اسم المريض" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 outline-none">
+      <div class="grid grid-cols-2 gap-3">
+        <select name="blood_type" required class="px-4 py-3 rounded-xl border border-gray-200">
+          <option value="">فصيلة الدم</option>
+          <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+          <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+        </select>
+        <input name="units_needed" type="number" min="1" value="1" required placeholder="الوحدات" class="px-4 py-3 rounded-xl border border-gray-200">
+      </div>
+      <input name="hospital" required placeholder="اسم المستشفى" class="w-full px-4 py-3 rounded-xl border border-gray-200">
+      <input name="city" required placeholder="المدينة" class="w-full px-4 py-3 rounded-xl border border-gray-200">
+      <input name="contact_phone" required placeholder="رقم التواصل" class="w-full px-4 py-3 rounded-xl border border-gray-200">
+      <select name="urgency" class="w-full px-4 py-3 rounded-xl border border-gray-200">
+        <option value="critical">حرجة — فوري</option>
+        <option value="urgent" selected>عاجلة</option>
+        <option value="normal">عادية</option>
+      </select>
+      <textarea name="notes" placeholder="ملاحظات إضافية" class="w-full px-4 py-3 rounded-xl border border-gray-200" rows="3"></textarea>
+      <button type="submit" class="w-full py-3 rounded-xl bg-blood-600 text-white font-bold hover:bg-blood-700 transition">إرسال النداء</button>
+    </form>
+    <div id="reqResult" class="mt-4 hidden"></div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  function openNewReq(){ document.getElementById('modal').classList.remove('hidden'); }
+  function closeModal(){ document.getElementById('modal').classList.add('hidden'); }
+
+  async function loadList() {
+    const bt = document.getElementById('fBlood').value;
+    const city = document.getElementById('fCity').value;
+    const urg = document.getElementById('fUrgency').value;
+    const st = document.getElementById('fStatus').value;
+    const params = new URLSearchParams();
+    if (bt) params.set('blood_type', bt);
+    if (city) params.set('city', city);
+    if (urg) params.set('urgency', urg);
+    if (st) params.set('status', st);
+    const res = await fetch('/api/emergencies?' + params.toString());
+    const data = await res.json();
+    const list = document.getElementById('list');
+    const empty = document.getElementById('empty');
+    if (!data.requests.length) { list.innerHTML=''; empty.classList.remove('hidden'); return; }
+    empty.classList.add('hidden');
+    list.innerHTML = data.requests.map(r => `
+      <div class="bg-white rounded-2xl p-5 shadow card-hover border-t-4 ${r.urgency==='critical'?'border-blood-700':r.urgency==='urgent'?'border-blood-500':'border-hope-500'}">
+        <div class="flex justify-between items-start mb-2">
+          <span class="text-2xl font-black text-blood-700">${r.blood_type}</span>
+          <span class="text-xs px-2 py-1 rounded-full font-bold ${r.urgency==='critical'?'bg-blood-100 text-blood-700':r.urgency==='urgent'?'bg-orange-100 text-orange-700':'bg-hope-100 text-hope-600'}">${r.urgency==='critical'?'حرجة':r.urgency==='urgent'?'عاجلة':'عادية'}</span>
+        </div>
+        <div class="font-bold text-gray-800">${r.patient_name}</div>
+        <div class="text-sm text-gray-500 mt-1">🏥 ${r.hospital}</div>
+        <div class="text-sm text-gray-500">📍 ${r.city}</div>
+        <div class="text-sm text-gray-500">📞 ${r.contact_phone}</div>
+        <div class="text-sm text-gray-500">📦 ${r.units_needed} وحدة · ${r.status}</div>
+        ${r.notes ? '<div class="text-sm text-gray-400 mt-2 italic">'+r.notes+'</div>' : ''}
+        <div class="flex gap-2 mt-3">
+          ${r.status==='open' ? `<button onclick="fulfill(${r.id})" class="text-xs px-3 py-1 rounded-full bg-hope-100 text-hope-600 font-bold hover:bg-hope-200 transition">✅ تم التلبية</button>` : ''}
+          <button onclick="removeReq(${r.id})" class="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition">🗑 حذف</button>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  async function fulfill(id) {
+    await fetch('/api/emergencies/'+id, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:'fulfilled'})});
+    loadList();
+  }
+  async function removeReq(id) {
+    if (!confirm('حذف هذا الطلب؟')) return;
+    await fetch('/api/emergencies/'+id, {method:'DELETE'});
+    loadList();
+  }
+
+  document.getElementById('reqForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const data = Object.fromEntries(new FormData(e.target));
+    data.units_needed = parseInt(data.units_needed);
+    const res = await fetch('/api/emergencies', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+    const json = await res.json();
+    const box = document.getElementById('reqResult');
+    box.classList.remove('hidden');
+    if (res.ok) {
+      box.className = 'mt-4 p-3 rounded-xl bg-hope-100 text-hope-600 font-bold';
+      box.innerHTML = '✅ تم نشر النداء (ID: ' + json.id + ')';
+      e.target.reset();
+      loadList();
+    } else {
+      box.className = 'mt-4 p-3 rounded-xl bg-blood-100 text-blood-700 font-bold';
+      box.innerHTML = '❌ ' + (json.error || 'خطأ');
+    }
+  });
+
+  loadList();
+</script>
+{% endblock %}

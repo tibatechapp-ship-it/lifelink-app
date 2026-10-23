@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+{% block title %}LifeLink — أنقذ حياة، تبرع بالدم{% endblock %}
+
+{% block content %}
+<!-- Hero -->
+<section class="hero-gradient text-white relative overflow-hidden">
+  <div class="absolute inset-0 opacity-20">
+    <div class="absolute top-10 left-10 w-72 h-72 bg-white rounded-full blur-3xl"></div>
+    <div class="absolute bottom-10 right-10 w-96 h-96 bg-red-300 rounded-full blur-3xl"></div>
+  </div>
+  <div class="max-w-7xl mx-auto px-4 py-24 sm:py-32 relative z-10 text-center">
+    <div class="pulse-ring inline-block mb-6">
+      <span class="text-7xl sm:text-8xl">🩸</span>
+    </div>
+    <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black mb-4 leading-tight float-up">
+      كل قطرة دم<br><span class="text-red-200">قد تنقذ روحاً</span>
+    </h1>
+    <p class="text-lg sm:text-2xl text-red-100 max-w-2xl mx-auto mb-8 float-up" style="animation-delay:.15s">
+      LifeLink — شبكة إنقاذ وتبرع بالدم. سجّل كمتبرع، أو أرسل نداء استغاثة، وسنجد لك المتبرعين الأقرب فوراً.
+    </p>
+    <div class="flex flex-col sm:flex-row gap-4 justify-center float-up" style="animation-delay:.3s">
+      <a href="/register" class="px-8 py-4 rounded-full bg-white text-blood-700 font-bold text-lg shadow-2xl hover:scale-105 transition-transform">
+        🤝 سجّل كمتبرع
+      </a>
+      <a href="/emergencies" class="px-8 py-4 rounded-full border-2 border-white text-white font-bold text-lg hover:bg-white/10 transition">
+        🚨 حالات عاجلة
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Stats -->
+<section class="max-w-7xl mx-auto px-4 -mt-12 relative z-20">
+  <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <div class="glass rounded-2xl p-6 text-center shadow-xl card-hover">
+      <div class="text-4xl font-black text-blood-600" id="sDonors">0</div>
+      <div class="text-gray-600 mt-1">متبرع مسجل</div>
+    </div>
+    <div class="glass rounded-2xl p-6 text-center shadow-xl card-hover">
+      <div class="text-4xl font-black text-blood-600" id="sOpen">0</div>
+      <div class="text-gray-600 mt-1">حالة عاجلة مفتوحة</div>
+    </div>
+    <div class="glass rounded-2xl p-6 text-center shadow-xl card-hover">
+      <div class="text-4xl font-black text-hope-600">24/7</div>
+      <div class="text-gray-600 mt-1">خدمة متواصلة</div>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="max-w-7xl mx-auto px-4 py-20">
+  <h2 class="text-3xl sm:text-4xl font-black text-center mb-12">كيف يعمل LifeLink؟</h2>
+  <div class="grid md:grid-cols-3 gap-8">
+    <div class="bg-white rounded-2xl p-8 shadow-lg card-hover text-center">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-blood-100 flex items-center justify-center text-3xl">📝</div>
+      <h3 class="text-xl font-bold mb-2">1. سجّل</h3>
+      <p class="text-gray-600">أدخل فصيلة دمك، مدينتك، وبياناتك. takes less than a minute.</p>
+    </div>
+    <div class="bg-white rounded-2xl p-8 shadow-lg card-hover text-center">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-blood-100 flex items-center justify-center text-3xl">🚨</div>
+      <h3 class="text-xl font-bold mb-2">2. نداء استغاثة</h3>
+      <p class="text-gray-600">مستشفى أو عائلة تنشر طلب دم عاجل مع الفصيلة والكمية والموقع.</p>
+    </div>
+    <div class="bg-white rounded-2xl p-8 shadow-lg card-hover text-center">
+      <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-hope-100 flex items-center justify-center text-3xl">🤝</div>
+      <h3 class="text-xl font-bold mb-2">3. إنقاذ</h3>
+      <p class="text-gray-600">نجد المتبرعين الأقرب فصيلةً وموقعاً ونربطهم فوراً.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Recent emergencies preview -->
+<section class="bg-blood-50 py-16">
+  <div class="max-w-7xl mx-auto px-4">
+    <div class="flex items-center justify-between mb-8">
+      <h2 class="text-3xl font-black">🚨 حالات عاجلة الآن</h2>
+      <a href="/emergencies" class="text-blood-600 font-bold hover:underline">عرض الكل ←</a>
+    </div>
+    <div id="previewList" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+      <div class="text-gray-500">جاري التحميل...</div>
+    </div>
+  </div>
+</section>
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+  async function loadStats() {
+    try {
+      const d = await fetch('/api/donors').then(r=>r.json());
+      document.getElementById('sDonors').textContent = d.count;
+    } catch(e){}
+    try {
+      const e = await fetch('/api/emergencies/open').then(r=>r.json());
+      document.getElementById('sOpen').textContent = e.count;
+    } catch(e){}
+  }
+  async function loadPreview() {
+    try {
+      const e = await fetch('/api/emergencies/open').then(r=>r.json());
+      const list = document.getElementById('previewList');
+      if (!e.requests.length) { list.innerHTML = '<div class="text-gray-500 col-span-full text-center py-8">لا توجد حالات عاجلة حالياً 🎉</div>'; return; }
+      list.innerHTML = e.requests.slice(0,6).map(r => `
+        <div class="bg-white rounded-xl p-5 shadow card-hover border-l-4 ${r.urgency==='critical'?'border-blood-700':r.urgency==='urgent'?'border-blood-500':'border-hope-500'}">
+          <div class="flex justify-between items-start mb-2">
+            <span class="font-bold text-lg">${r.blood_type}</span>
+            <span class="text-xs px-2 py-1 rounded-full ${r.urgency==='critical'?'bg-blood-100 text-blood-700':r.urgency==='urgent'?'bg-blood-50 text-blood-600':'bg-hope-100 text-hope-600'}">${r.urgency}</span>
+          </div>
+          <div class="text-gray-700 font-medium">${r.patient_name}</div>
+          <div class="text-sm text-gray-500 mt-1">🏥 ${r.hospital} — ${r.city}</div>
+          <div class="text-sm text-gray-500">📞 ${r.contact_phone} · ${r.units_needed} وحدة</div>
+        </div>
+      `).join('');
+    } catch(e){ document.getElementById('previewList').innerHTML = '<div class="text-red-500">تعذر التحميل</div>'; }
+  }
+  loadStats(); loadPreview();
+</script>
+{% endblock %}
