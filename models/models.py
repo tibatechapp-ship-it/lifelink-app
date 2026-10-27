@@ -76,12 +76,12 @@ class EmergencyRequest(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
-            "patient_name": self.patient_name,
+            "patient_name": decrypt_field(self.patient_name),
             "blood_type": self.blood_type,
             "units_needed": self.units_needed,
-            "hospital": self.hospital,
+            "hospital": decrypt_field(self.hospital),
             "city": self.city,
-            "contact_phone": self.contact_phone,
+            "contact_phone": decrypt_field(self.contact_phone),
             "urgency": self.urgency,
             "status": self.status,
             "notes": self.notes,
