@@ -2,6 +2,7 @@
 
 import re
 from flask import Blueprint, request, jsonify
+from routes.auth_routes import current_donor, jwt_required
 from models.models import db, EmergencyRequest
 
 emergency_bp = Blueprint("emergencies", __name__, url_prefix="/api/emergencies")
@@ -90,6 +91,7 @@ def get_emergency(req_id):
 
 
 @emergency_bp.route("", methods=["POST"])
+@jwt_required
 def create_emergency():
     data = request.get_json(silent=True) or {}
     required = ["patient_name", "blood_type", "hospital", "city", "contact_phone"]
@@ -119,8 +121,12 @@ def create_emergency():
 
 
 @emergency_bp.route("/<int:req_id>", methods=["PUT"])
+@jwt_required
 def update_emergency(req_id):
     req = EmergencyRequest.query.get_or_404(req_id)
+    current = current_donor()
+    if current is None or current.role not in ("center", "hospital", "admin"):
+        return _err("Forbidden", 403)
     data = request.get_json(silent=True) or {}
     if not data:
         return _err("No data provided")
@@ -150,8 +156,12 @@ def update_emergency(req_id):
 
 
 @emergency_bp.route("/<int:req_id>", methods=["DELETE"])
+@jwt_required
 def delete_emergency(req_id):
     req = EmergencyRequest.query.get_or_404(req_id)
+    current = current_donor()
+    if current is None or current.role not in ("center", "admin"):
+        return _err("Forbidden", 403)
     db.session.delete(req)
     db.session.commit()
     return jsonify({"deleted": req_id}), 200

@@ -3,6 +3,7 @@
 import re
 from flask import Blueprint, request, jsonify
 from models.models import db, Donor
+from routes.auth_routes import current_donor, jwt_required, require_role
 
 donor_bp = Blueprint("donors", __name__, url_prefix="/api/donors")
 
@@ -86,6 +87,7 @@ def get_donor(donor_id):
 
 
 @donor_bp.route("", methods=["POST"])
+@jwt_required
 def create_donor():
     data = request.get_json(silent=True) or {}
     required = ["name", "email", "phone", "blood_type", "city", "age", "weight"]
@@ -123,8 +125,12 @@ def _to_bool(v):
 
 
 @donor_bp.route("/<int:donor_id>", methods=["PUT"])
+@jwt_required
 def update_donor(donor_id):
     donor = Donor.query.get_or_404(donor_id)
+    current = current_donor()
+    if current is None or (current.id != donor.id and current.role not in ("admin", "center")):
+        return _err("Forbidden", 403)
     data = request.get_json(silent=True) or {}
     if not data:
         return _err("No data provided")
@@ -152,8 +158,12 @@ def update_donor(donor_id):
 
 
 @donor_bp.route("/<int:donor_id>", methods=["DELETE"])
+@jwt_required
 def delete_donor(donor_id):
     donor = Donor.query.get_or_404(donor_id)
+    current = current_donor()
+    if current is None or (current.id != donor.id and current.role not in ("admin",)):
+        return _err("Forbidden", 403)
     db.session.delete(donor)
     db.session.commit()
     return jsonify({"deleted": donor_id}), 200

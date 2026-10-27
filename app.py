@@ -5,14 +5,15 @@ from flask import Flask, render_template, jsonify
 from models.models import db
 from routes.donor_routes import donor_bp
 from routes.emergency_routes import emergency_bp
+from routes.auth_routes import auth_bp
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
-DB_PATH = os.path.join(BASE_DIR, "lifelink.db")
+DB_PATH = os.environ.get("LIFELINK_DB_PATH", os.path.join(BASE_DIR, "lifelink.db"))
 
 
 def create_app():
     app = Flask(__name__)
-    app.config["SQLALCHEMY_DATABASE_URI"] = f"sqlite:///{DB_PATH}"
+    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", f"sqlite:///{DB_PATH}")
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     secret = os.environ.get("SECRET_KEY")
     if not secret:
@@ -20,11 +21,14 @@ def create_app():
         warnings.warn("SECRET_KEY not set; using insecure dev default. Set SECRET_KEY in production.", stacklevel=2)
         secret = "lifelink-dev-secret-change-in-prod"
     app.config["SECRET_KEY"] = secret
+    app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", secret)
+    app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False
 
     db.init_app(app)
 
     app.register_blueprint(donor_bp)
     app.register_blueprint(emergency_bp)
+    app.register_blueprint(auth_bp)
 
     with app.app_context():
         db.create_all()

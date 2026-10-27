@@ -1,6 +1,7 @@
 """SQLAlchemy models for LifeLink."""
 
 from flask_sqlalchemy import SQLAlchemy
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, timezone
 
 db = SQLAlchemy()
@@ -21,9 +22,19 @@ class Donor(db.Model):
     city = db.Column(db.String(80), nullable=False, index=True)
     age = db.Column(db.Integer, nullable=False)
     weight = db.Column(db.Float, nullable=False)
+    password_hash = db.Column(db.String(255), nullable=True)
+    role = db.Column(db.String(20), default="donor", nullable=False, index=True)  # donor/center/hospital/admin
     last_donation = db.Column(db.DateTime, nullable=True)
     available = db.Column(db.Boolean, default=True, nullable=False)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        if not self.password_hash:
+            return False
+        return check_password_hash(self.password_hash, password)
 
     def to_dict(self):
         return {
@@ -37,6 +48,7 @@ class Donor(db.Model):
             "weight": self.weight,
             "last_donation": self.last_donation.isoformat() if self.last_donation else None,
             "available": self.available,
+            "role": self.role,
             "created_at": self.created_at.isoformat(),
         }
 
