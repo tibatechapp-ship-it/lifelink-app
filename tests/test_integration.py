@@ -31,7 +31,7 @@ def client(tmp_path, monkeypatch):
 
 
 def test_full_donor_flow(client):
-    c, dbfile = client
+    c, _ = client
     # register
     r = c.post("/api/auth/register", json={
         "name": "Ali", "email": "ali@test.com", "phone": "+967700000000",
@@ -110,7 +110,7 @@ def test_emergency_flow(client):
 
 
 def test_health_endpoint(client):
-    c, dbfile = client
+    c, _ = client
     r = c.get("/health")
     assert r.status_code == 200
     assert r.get_json()["status"] == "ok"
