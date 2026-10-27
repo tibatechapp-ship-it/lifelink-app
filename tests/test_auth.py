@@ -53,9 +53,11 @@ def test_register_missing_fields(client):
     assert "Missing fields" in r.get_json()["error"]
 
 
-def test_register_invalid_role(client):
+def test_register_invalid_role_ignored(client):
+    # self-registration ignores role param -> always donor
     r = _register(client, role="superadmin")
-    assert r.status_code == 400
+    assert r.status_code == 201
+    assert r.get_json()["donor"]["role"] == "donor"
 
 
 def test_login_success(client):
@@ -119,3 +121,38 @@ def test_authorization_donor_cannot_delete_others(client):
     # try to delete donor 1 (a) as b -> forbidden
     r = client.delete("/api/donors/1", headers={"Authorization": f"Bearer {token}"})
     assert r.status_code == 403
+
+
+def test_get_donor_without_token(client):
+    r = client.get("/api/donors/1")
+    assert r.status_code == 401
+
+
+def test_tampered_token_rejected(client):
+    _register(client)
+    r = client.get("/api/donors/1", headers={"Authorization": "Bearer tampered.garbage.token"})
+    assert r.status_code == 401
+
+
+def test_emergency_create_requires_auth(client):
+    r = client.post("/api/emergencies", json={
+        "patient_name": "X", "blood_type": "O+", "hospital": "H", "city": "C", "contact_phone": "+967700000000",
+    })
+    assert r.status_code == 401
+
+
+def test_emergency_create_with_token(client):
+    _register(client)
+    login = client.post("/api/auth/login", json={"email": "a@b.com", "password": "secret123"})
+    token = login.get_json()["access_token"]
+    r = client.post("/api/emergencies", headers={"Authorization": f"Bearer {token}"}, json={
+        "patient_name": "X", "blood_type": "O+", "hospital": "H", "city": "C", "contact_phone": "+967700000000",
+    })
+    assert r.status_code == 201
+
+
+def test_role_escalation_blocked(client):
+    # self-registration cannot elevate to admin
+    r = _register(client, role="admin")
+    assert r.status_code == 201
+    assert r.get_json()["donor"]["role"] == "donor"

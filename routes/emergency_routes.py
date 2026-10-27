@@ -85,6 +85,7 @@ def list_emergencies():
 
 
 @emergency_bp.route("/<int:req_id>", methods=["GET"])
+@jwt_required
 def get_emergency(req_id):
     req = EmergencyRequest.query.get_or_404(req_id)
     return jsonify(req.to_dict())

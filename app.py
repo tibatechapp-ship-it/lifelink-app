@@ -17,9 +17,9 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     secret = os.environ.get("SECRET_KEY")
     if not secret:
-        import warnings
-        warnings.warn("SECRET_KEY not set; using insecure dev default. Set SECRET_KEY in production.", stacklevel=2)
-        secret = "lifelink-dev-secret-change-in-prod"
+        import secrets, warnings
+        warnings.warn("SECRET_KEY not set; generating ephemeral secret (tokens will not survive restart). Set SECRET_KEY in production.", stacklevel=2)
+        secret = secrets.token_hex(32)
     app.config["SECRET_KEY"] = secret
     app.config["JWT_SECRET_KEY"] = os.environ.get("JWT_SECRET_KEY", secret)
     app.config["JWT_ACCESS_TOKEN_EXPIRES"] = False

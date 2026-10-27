@@ -11,27 +11,42 @@ auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 VALID_ROLES = {"donor", "center", "hospital", "admin"}
 TOKEN_TTL = 3600 * 24  # 24h
 
+_SECRET_CACHE = {}
+
+def get_secret():
+    if "v" in _SECRET_CACHE:
+        return _SECRET_CACHE["v"]
+    secret = os.environ.get("JWT_SECRET_KEY") or os.environ.get("SECRET_KEY")
+    if not secret:
+        import secrets, warnings
+        warnings.warn("JWT_SECRET_KEY/SECRET_KEY not set; using ephemeral secret (tokens will not survive restart).", stacklevel=2)
+        secret = secrets.token_hex(32)
+    _SECRET_CACHE["v"] = secret
+    return secret
+
 _serializer = None
 
 
 def get_serializer():
     global _serializer
     if _serializer is None:
-        secret = os.environ.get("JWT_SECRET_KEY") or os.environ.get("SECRET_KEY") or "lifelink-dev-secret-change-in-prod"
-        _serializer = URLSafeTimedSerializer(secret, salt="lifelink-auth")
+        secret = get_secret()
+        _serializer = URLSafeTimedSerializer(secret, salt="lifelink-auth-access")
     return _serializer
 
 
 def make_token(donor_id, role, refresh=False):
-    s = get_serializer()
+    salt = "lifelink-auth-refresh" if refresh else "lifelink-auth-access"
+    ser = URLSafeTimedSerializer(get_secret(), salt=salt)
     payload = {"sub": str(donor_id), "role": role, "typ": "refresh" if refresh else "access"}
-    return s.dumps(payload)
+    return ser.dumps(payload)
 
 
 def verify_token(token, refresh=False):
-    s = get_serializer()
+    salt = "lifelink-auth-refresh" if refresh else "lifelink-auth-access"
+    ser = URLSafeTimedSerializer(get_secret(), salt=salt)
     try:
-        data = s.loads(token, max_age=TOKEN_TTL if not refresh else TOKEN_TTL * 7)
+        data = ser.loads(token, max_age=TOKEN_TTL if not refresh else TOKEN_TTL * 7)
     except (BadSignature, SignatureExpired):
         return None
     if (data.get("typ") == "refresh") != refresh:
@@ -91,12 +106,9 @@ def register():
     email = str(data["email"]).strip().lower()
     if Donor.query.filter_by(email=email).first():
         return _err("Email already registered", 409)
-    role = str(data.get("role", "donor")).strip().lower()
-    if role not in VALID_ROLES or role not in ("donor", "center", "hospital", "admin"):
-        return _err("invalid role")
-    # only admin can create non-donor roles (bootstrap: first user becomes admin if none exist)
-    if role != "donor" and Donor.query.filter(Donor.role != "donor").count() == 0 and role != "admin":
-        role = "donor"
+    # Self-registration only creates donors. Elevated roles (center/hospital/admin)
+    # must be assigned by an existing admin (out of scope for this endpoint).
+    role = "donor"
     try:
         donor = Donor(
             name=str(data["name"]).strip(),

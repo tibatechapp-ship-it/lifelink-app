@@ -61,6 +61,7 @@ def _validate_donor(data, partial=False):
 
 
 @donor_bp.route("", methods=["GET"])
+@jwt_required
 def list_donors():
     """List donors with optional filters: blood_type, city, available."""
     q = Donor.query
@@ -81,6 +82,7 @@ def list_donors():
 
 
 @donor_bp.route("/<int:donor_id>", methods=["GET"])
+@jwt_required
 def get_donor(donor_id):
     donor = Donor.query.get_or_404(donor_id)
     return jsonify(donor.to_dict())
