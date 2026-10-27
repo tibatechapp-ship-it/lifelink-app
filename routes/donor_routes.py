@@ -4,6 +4,7 @@ import re
 from flask import Blueprint, request, jsonify
 from models.models import db, Donor
 from routes.auth_routes import current_donor, jwt_required, require_role
+from models.encryption import encrypt_field
 
 donor_bp = Blueprint("donors", __name__, url_prefix="/api/donors")
 
@@ -103,9 +104,9 @@ def create_donor():
         return _err("Email already registered", 409)
     try:
         donor = Donor(
-            name=str(data["name"]).strip(),
+            name=encrypt_field(str(data["name"]).strip()),
             email=str(data["email"]).strip(),
-            phone=str(data["phone"]).strip(),
+            phone=encrypt_field(str(data["phone"]).strip()),
             blood_type=str(data["blood_type"]).strip().upper(),
             city=str(data["city"]).strip(),
             age=int(data["age"]),
@@ -140,8 +141,8 @@ def update_donor(donor_id):
     if errors:
         return _err("; ".join(errors))
     field_map = {
-        "name": lambda v: str(v).strip(),
-        "phone": lambda v: str(v).strip(),
+        "name": lambda v: encrypt_field(str(v).strip()),
+        "phone": lambda v: encrypt_field(str(v).strip()),
         "blood_type": lambda v: str(v).strip().upper(),
         "city": lambda v: str(v).strip(),
         "age": lambda v: int(v),

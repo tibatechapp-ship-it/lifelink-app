@@ -3,6 +3,7 @@
 import re
 from flask import Blueprint, request, jsonify
 from routes.auth_routes import current_donor, jwt_required
+from models.encryption import encrypt_field, decrypt_field
 from models.models import db, EmergencyRequest
 
 emergency_bp = Blueprint("emergencies", __name__, url_prefix="/api/emergencies")
@@ -104,12 +105,12 @@ def create_emergency():
         return _err("; ".join(errors))
     try:
         req = EmergencyRequest(
-            patient_name=str(data["patient_name"]).strip(),
+            patient_name=encrypt_field(str(data["patient_name"]).strip()),
             blood_type=str(data["blood_type"]).strip().upper(),
             units_needed=int(data.get("units_needed", 1)),
-            hospital=str(data["hospital"]).strip(),
+            hospital=encrypt_field(str(data["hospital"]).strip()),
             city=str(data["city"]).strip(),
-            contact_phone=str(data["contact_phone"]).strip(),
+            contact_phone=encrypt_field(str(data["contact_phone"]).strip()),
             urgency=str(data.get("urgency", "urgent")).strip().lower(),
             notes=(str(data["notes"]).strip() if data.get("notes") is not None else None),
         )
@@ -135,12 +136,12 @@ def update_emergency(req_id):
     if errors:
         return _err("; ".join(errors))
     field_map = {
-        "patient_name": lambda v: str(v).strip(),
+        "patient_name": lambda v: encrypt_field(str(v).strip()),
         "blood_type": lambda v: str(v).strip().upper(),
         "units_needed": lambda v: int(v),
-        "hospital": lambda v: str(v).strip(),
+        "hospital": lambda v: encrypt_field(str(v).strip()),
         "city": lambda v: str(v).strip(),
-        "contact_phone": lambda v: str(v).strip(),
+        "contact_phone": lambda v: encrypt_field(str(v).strip()),
         "urgency": lambda v: str(v).strip().lower(),
         "status": lambda v: str(v).strip().lower(),
         "notes": lambda v: (str(v).strip() if v is not None else None),

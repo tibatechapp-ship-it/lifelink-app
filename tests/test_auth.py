@@ -16,6 +16,9 @@ def client(tmp_path, monkeypatch):
     monkeypatch.setenv("SECRET_KEY", "test-secret")
     monkeypatch.setenv("DATABASE_URL", f"sqlite:///{dbfile}")
     monkeypatch.setenv("LIFELINK_DB_PATH", dbfile)
+    monkeypatch.setenv("RATE_LIMIT_ENABLED", "0")
+    from routes import middleware
+    middleware._buckets.clear()
     app = create_app()
     app.config["TESTING"] = True
     with app.app_context():

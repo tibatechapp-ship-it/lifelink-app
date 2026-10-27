@@ -2,6 +2,7 @@
 
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
+from models.encryption import encrypt_field, decrypt_field
 from datetime import datetime, timezone
 
 db = SQLAlchemy()
@@ -39,11 +40,11 @@ class Donor(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
-            "name": self.name,
+            "name": decrypt_field(self.name),
             "email": self.email,
-            "phone": self.phone,
+            "phone": decrypt_field(self.phone),
             "blood_type": self.blood_type,
-            "city": self.city,
+            "city": decrypt_field(self.city),
             "age": self.age,
             "weight": self.weight,
             "last_donation": self.last_donation.isoformat() if self.last_donation else None,

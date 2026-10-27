@@ -6,6 +6,7 @@ from models.models import db
 from routes.donor_routes import donor_bp
 from routes.emergency_routes import emergency_bp
 from routes.auth_routes import auth_bp
+from routes.middleware import register_middleware
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
 DB_PATH = os.environ.get("LIFELINK_DB_PATH", os.path.join(BASE_DIR, "lifelink.db"))
@@ -29,6 +30,7 @@ def create_app():
     app.register_blueprint(donor_bp)
     app.register_blueprint(emergency_bp)
     app.register_blueprint(auth_bp)
+    register_middleware(app)
 
     with app.app_context():
         db.create_all()

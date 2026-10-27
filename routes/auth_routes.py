@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 from flask import Blueprint, request, jsonify
 from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
 from models.models import db, Donor
+from models.encryption import encrypt_field
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -111,11 +112,11 @@ def register():
     role = "donor"
     try:
         donor = Donor(
-            name=str(data["name"]).strip(),
+            name=encrypt_field(str(data["name"]).strip()),
             email=email,
-            phone=str(data["phone"]).strip(),
+            phone=encrypt_field(str(data["phone"]).strip()),
             blood_type=str(data["blood_type"]).strip().upper(),
-            city=str(data["city"]).strip(),
+            city=encrypt_field(str(data["city"]).strip()),
             age=int(data["age"]),
             weight=float(data["weight"]),
             role=role,
