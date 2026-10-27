@@ -1,6 +1,7 @@
 """Integration tests for LifeLink (end-to-end flow)."""
 
 import os
+
 import pytest
 
 os.environ.setdefault("SECRET_KEY", "test-secret")
@@ -8,7 +9,6 @@ os.environ.setdefault("FLASK_DEBUG", "0")
 
 from app import create_app
 from models.models import db
-from models.encryption import is_encrypted
 
 
 @pytest.fixture
@@ -74,7 +74,7 @@ def test_pii_encrypted_at_rest(client):
         "name": "Ali", "email": "ali@test.com", "phone": "+967700000000",
         "blood_type": "O+", "city": "Sanaa", "age": 25, "weight": 70, "password": "secret123",
     })
-    token = r.get_json()["access_token"]
+    _ = r.get_json()["access_token"]
     import sqlite3
     conn = sqlite3.connect(dbfile)
     rows = conn.execute("SELECT name, phone FROM donors").fetchall()

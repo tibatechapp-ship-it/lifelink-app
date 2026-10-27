@@ -1,9 +1,11 @@
 """SQLAlchemy models for LifeLink."""
 
+from datetime import UTC, datetime
+
 from flask_sqlalchemy import SQLAlchemy
-from werkzeug.security import generate_password_hash, check_password_hash
-from models.encryption import encrypt_field, decrypt_field
-from datetime import datetime, timezone
+from werkzeug.security import check_password_hash, generate_password_hash
+
+from models.encryption import decrypt_field
 
 db = SQLAlchemy()
 
@@ -27,7 +29,7 @@ class Donor(db.Model):
     role = db.Column(db.String(20), default="donor", nullable=False, index=True)  # donor/center/hospital/admin
     last_donation = db.Column(db.DateTime, nullable=True)
     available = db.Column(db.Boolean, default=True, nullable=False)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     def set_password(self, password):
         self.password_hash = generate_password_hash(password)
@@ -71,7 +73,7 @@ class EmergencyRequest(db.Model):
     urgency = db.Column(db.String(20), default="urgent", nullable=False, index=True)  # critical/urgent/normal
     status = db.Column(db.String(20), default="open", nullable=False, index=True)  # open/fulfilled/closed
     notes = db.Column(db.Text, nullable=True)
-    created_at = db.Column(db.DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     def to_dict(self):
         return {

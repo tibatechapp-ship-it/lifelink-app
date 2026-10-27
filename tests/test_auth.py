@@ -1,13 +1,14 @@
 """Auth tests for LifeLink."""
 
 import os
+
 import pytest
 
 os.environ.setdefault("SECRET_KEY", "test-secret")
 os.environ.setdefault("FLASK_DEBUG", "0")
 
 from app import create_app
-from models.models import db, Donor
+from models.models import db
 
 
 @pytest.fixture

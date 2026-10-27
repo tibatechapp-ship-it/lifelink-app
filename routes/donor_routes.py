@@ -1,10 +1,12 @@
 """Donor registration, search, and management routes."""
 
 import re
-from flask import Blueprint, request, jsonify
-from models.models import db, Donor
-from routes.auth_routes import current_donor, jwt_required, require_role
+
+from flask import Blueprint, jsonify, request
+
 from models.encryption import encrypt_field
+from models.models import Donor, db
+from routes.auth_routes import current_donor, jwt_required
 
 donor_bp = Blueprint("donors", __name__, url_prefix="/api/donors")
 
@@ -54,10 +56,9 @@ def _validate_donor(data, partial=False):
         else:
             if weight < 45 or weight > 250:
                 errors.append("weight must be between 45 and 250")
-    if "available" in data and not isinstance(data["available"], bool):
+    if "available" in data and not isinstance(data["available"], bool) and str(data["available"]).lower() not in ("true", "false", "1", "0"):
         # accept truthy strings from forms
-        if str(data["available"]).lower() not in ("true", "false", "1", "0"):
-            errors.append("available must be boolean")
+        errors.append("available must be boolean")
     return errors
 
 
@@ -178,9 +179,8 @@ def search_donors():
     blood_type = request.args.get("blood_type", "").upper().strip()
     city = request.args.get("city", "").strip()
     q = Donor.query.filter_by(available=True)
-    if blood_type:
-        if blood_type in VALID_BLOOD_TYPES:
-            q = q.filter(Donor.blood_type == blood_type)
+    if blood_type and blood_type in VALID_BLOOD_TYPES:
+        q = q.filter(Donor.blood_type == blood_type)
     if city:
         q = q.filter(Donor.city.ilike(f"%{city[:80]}%"))
     donors = q.limit(200).all()

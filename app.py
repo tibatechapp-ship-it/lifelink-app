@@ -1,11 +1,13 @@
 """LifeLink — Blood donation & emergency rescue network."""
 
 import os
-from flask import Flask, render_template, jsonify
+
+from flask import Flask, jsonify, render_template
+
 from models.models import db
+from routes.auth_routes import auth_bp
 from routes.donor_routes import donor_bp
 from routes.emergency_routes import emergency_bp
-from routes.auth_routes import auth_bp
 from routes.middleware import register_middleware
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
@@ -18,7 +20,10 @@ def create_app():
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     secret = os.environ.get("SECRET_KEY")
     if not secret:
-        import secrets, warnings
+        import secrets
+        import warnings
+        if os.environ.get("FLASK_ENV") == "production":
+            raise RuntimeError("SECRET_KEY must be set in production (FLASK_ENV=production).")
         warnings.warn("SECRET_KEY not set; generating ephemeral secret (tokens will not survive restart). Set SECRET_KEY in production.", stacklevel=2)
         secret = secrets.token_hex(32)
     app.config["SECRET_KEY"] = secret

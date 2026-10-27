@@ -1,7 +1,8 @@
 """Field-level PII encryption helpers (Fernet, key from env)."""
 
-import os
 import base64
+import os
+
 from cryptography.fernet import Fernet, InvalidToken
 
 KEY_ENV = "FIELD_ENCRYPTION_KEY"

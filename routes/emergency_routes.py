@@ -1,10 +1,12 @@
 """Emergency blood request routes."""
 
 import re
-from flask import Blueprint, request, jsonify
+
+from flask import Blueprint, jsonify, request
+
+from models.encryption import encrypt_field
+from models.models import EmergencyRequest, db
 from routes.auth_routes import current_donor, jwt_required
-from models.encryption import encrypt_field, decrypt_field
-from models.models import db, EmergencyRequest
 
 emergency_bp = Blueprint("emergencies", __name__, url_prefix="/api/emergencies")
 
@@ -48,15 +50,12 @@ def _validate_emergency(data, partial=False):
         else:
             if u < 1 or u > 100:
                 errors.append("units_needed must be between 1 and 100")
-    if "urgency" in data:
-        if str(data["urgency"]).strip().lower() not in VALID_URGENCY:
-            errors.append("invalid urgency")
-    if "status" in data:
-        if str(data["status"]).strip().lower() not in VALID_STATUS:
-            errors.append("invalid status")
-    if "notes" in data and data["notes"] is not None:
-        if not isinstance(data["notes"], str) or len(data["notes"]) > 2000:
-            errors.append("notes must be <=2000 chars")
+    if "urgency" in data and str(data["urgency"]).strip().lower() not in VALID_URGENCY:
+        errors.append("invalid urgency")
+    if "status" in data and str(data["status"]).strip().lower() not in VALID_STATUS:
+        errors.append("invalid status")
+    if "notes" in data and data["notes"] is not None and (not isinstance(data["notes"], str) or len(data["notes"]) > 2000):
+        errors.append("notes must be <=2000 chars")
     return errors
 
 

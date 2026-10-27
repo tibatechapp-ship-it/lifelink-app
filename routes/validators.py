@@ -1,8 +1,7 @@
 """Pydantic validation models for LifeLink inputs."""
 
-from pydantic import BaseModel, Field, field_validator, ValidationError
-from typing import Optional
 
+from pydantic import BaseModel, Field, ValidationError, field_validator
 
 VALID_BLOOD_TYPES = {"A+", "A-", "B+", "B-", "AB+", "AB-", "O+", "O-"}
 VALID_URGENCY = {"critical", "urgent", "normal"}
@@ -17,7 +16,7 @@ class DonorIn(BaseModel):
     city: str = Field(..., min_length=1, max_length=80)
     age: int = Field(..., ge=18, le=65)
     weight: float = Field(..., ge=45, le=250)
-    available: Optional[bool] = True
+    available: bool | None = True
 
     @field_validator("blood_type")
     @classmethod
@@ -44,8 +43,8 @@ class EmergencyIn(BaseModel):
     contact_phone: str = Field(..., min_length=6, max_length=30)
     units_needed: int = Field(default=1, ge=1, le=100)
     urgency: str = Field(default="urgent")
-    status: Optional[str] = None
-    notes: Optional[str] = Field(default=None, max_length=2000)
+    status: str | None = None
+    notes: str | None = Field(default=None, max_length=2000)
 
     @field_validator("blood_type")
     @classmethod
@@ -82,4 +81,4 @@ def validate(model_cls, data):
         return None, [f"{err['loc'][0]}: {err['msg']}" for err in e.errors()]
 
 
-__all__ = ["DonorIn", "EmergencyIn", "validate", "VALID_BLOOD_TYPES", "VALID_URGENCY", "VALID_STATUS"]
+__all__ = ["VALID_BLOOD_TYPES", "VALID_STATUS", "VALID_URGENCY", "DonorIn", "EmergencyIn", "validate"]

@@ -1,7 +1,6 @@
 """Validation tests for LifeLink (Pydantic)."""
 
 import os
-import pytest
 
 os.environ.setdefault("SECRET_KEY", "test-secret")
 os.environ.setdefault("FLASK_DEBUG", "0")
@@ -54,7 +53,7 @@ def test_donor_invalid_email():
 
 
 def test_emergency_valid():
-    obj, errs = validate(EmergencyIn, {
+    _obj, errs = validate(EmergencyIn, {
         "patient_name": "X", "blood_type": "O+", "hospital": "H", "city": "C", "contact_phone": "+967700000000",
     })
     assert errs == []

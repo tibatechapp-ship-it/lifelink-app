@@ -1,11 +1,12 @@
 """Authentication & authorization routes (itsdangerous-signed tokens, no heavy crypto)."""
 
 import os
-from datetime import datetime, timezone, timedelta
-from flask import Blueprint, request, jsonify
-from itsdangerous import URLSafeTimedSerializer, BadSignature, SignatureExpired
-from models.models import db, Donor
+
+from flask import Blueprint, jsonify, request
+from itsdangerous import BadSignature, SignatureExpired, URLSafeTimedSerializer
+
 from models.encryption import encrypt_field
+from models.models import Donor, db
 
 auth_bp = Blueprint("auth", __name__, url_prefix="/api/auth")
 
@@ -19,7 +20,8 @@ def get_secret():
         return _SECRET_CACHE["v"]
     secret = os.environ.get("JWT_SECRET_KEY") or os.environ.get("SECRET_KEY")
     if not secret:
-        import secrets, warnings
+        import secrets
+        import warnings
         warnings.warn("JWT_SECRET_KEY/SECRET_KEY not set; using ephemeral secret (tokens will not survive restart).", stacklevel=2)
         secret = secrets.token_hex(32)
     _SECRET_CACHE["v"] = secret

@@ -1,6 +1,7 @@
 """Rate limit tests for LifeLink."""
 
 import os
+
 import pytest
 
 os.environ.setdefault("SECRET_KEY", "test-secret")
