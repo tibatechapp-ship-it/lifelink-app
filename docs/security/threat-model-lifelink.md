@@ -1,5 +1,7 @@
 # LifeLink — Security Threat Model & Remediation Plan
 
+> **Correction (2026-10-27):** L10 (PII plaintext) reclassified MEDIUM -> HIGH (health data = legal obligation, not enhancement). Field-level encryption added to Day 3 scope (4-6h). CI green was a false positive (no tests/ dir; workflow echoed 'no tests directory yet - pass').
+
 **Date:** 2026-10-27
 **Scope:** Flask REST API + SQLite + Docker (blood donation PII: name, phone, email, blood type, city, age, weight)
 **Status:** Audit findings — remediation scoped as "Full" (4 days).
@@ -31,7 +33,8 @@
 - Roles: donor (self), center (region), hospital (read emergencies), admin.
 - Tests: tests/test_auth.py (>=10 cases: login, bad creds, expired token, role denial).
 
-### Day 3 — Validation + Rate limit + CORS
+### Day 3 — Validation + Rate limit + CORS + Field-level PII encryption
+- Encrypt sensitive fields (name, phone, email, city) at rest using Fernet/AES-GCM per field (4-6 hours).
 - Pydantic models for Donor/Emergency input; reject oversized (>1MB) bodies.
 - Flask-Limiter: per-IP limits on POST/GET.
 - CORS: restrict to known origins.
@@ -62,6 +65,7 @@ cat routes/emergency_routes.py
 - [ ] Pydantic validation on POST/PUT; 400 on invalid; 413 on oversized.
 - [ ] Rate limit: 60 req/min per IP on GET, 10 req/min on POST.
 - [ ] CORS restricted to configured origins.
+- [ ] Sensitive PII fields encrypted at rest (L10).
 - [ ] Docker non-root + healthcheck + no debug default.
 - [ ] docs/deployment.md with HTTPS via reverse proxy.
 - [ ] pytest >= 20 tests, CI green.
