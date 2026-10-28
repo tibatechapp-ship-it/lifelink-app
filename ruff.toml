@@ -1,0 +1,7 @@
+# One lint contract for every machine — the phone and the CI runner must agree,
+# otherwise the same commit is green here and red there.
+#
+# migrations/versions holds Alembic-generated revisions: they are artefacts of
+# `alembic revision`, never hand-edited for style. Linting them only ever
+# produces churn (UP/I001 on generated imports).
+extend-exclude = ["migrations/versions"]
