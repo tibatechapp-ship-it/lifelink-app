@@ -46,16 +46,61 @@ python app.py
 
 ---
 
-## 🐳 تشغيل عبر Docker
+## 🐳 تشغيل عبر Docker (SQLite)
 
 ```bash
 docker build -t lifelink .
-docker run -p 5000:5000 lifelink
+docker run -p 5000:5000 -e SECRET_KEY="$(openssl rand -hex 32)" lifelink
 ```
+
+## 🚢 النشر (Postgres + Migrations)
+
+الإنتاج لا يستخدم SQLite: القاعدة **PostgreSQL**، والمخطط يملكه **Alembic**.
+
+```bash
+cp .env.example .env            # املأ DB_PASSWORD و SECRET_KEY
+docker compose up -d --build
+curl -s localhost:5000/ready    # 200 فقط عندما تجيب القاعدة
+```
+
+- **المسار الوحيد للنشر** = صورة واحدة تُشغّل `scripts/entrypoint.sh`:
+  `alembic upgrade head` ثم `gunicorn`. الهجرات تعمل **قبل** الاستماع للطلبات،
+  وإن فشلت يموت الحاوية بصوت عالٍ بدل أن يخدم الإصدار القديم مخططاً ناقصاً.
+- `db.create_all()` يعمل على SQLite فقط (تطوير/اختبارات). على Postgres المخطط
+  ملك Alembic — وإلا لحجب `create_all` فشل الهجرة بإنشاء الجداول بصمت.
+- `DATABASE_URL` واحد فقط: الصيغ التي تمنحها المنصات (`postgres://`) و
+  (`postgresql://`) تُعاد كتابتها إلى `postgresql+psycopg://` في `models/database.py`،
+  لأن SQLAlchemy 2 أسقط الـalias و`postgresql://` يختار psycopg2 غير المثبَّت.
+- `SECRET_KEY` إلزامي في الإنتاج: `FLASK_ENV=production` + فارغ ⇒ توقف فوري.
+  في compose أيضاً `${SECRET_KEY:?}` و`${DB_PASSWORD:?}` يمنعان الإقلاع.
+
+### الهجرات
+
+```bash
+alembic upgrade head                       # تطبيق (يشغّله الـentrypoint)
+alembic check                              # يفشل إذا انحرف الموديل عن الهجرة
+alembic revision --autogenerate -m "msg"   # بعد تعديل models/
+alembic current                            # الإصدار الحالي
+```
+
+CI يشغّل الهجرة على **Postgres حقيقي**: upgrade مرتين (idempotent)، downgrade
+إلى base ثم upgrade، ثم `alembic check`، ثم يبني الصورة ويشغّلها وينتظر
+`/ready` = 200.
+
+### المراقبة
+
+| المسار | المعنى |
+|---|---|
+| `/health` | العملية تعمل — **لا يلمس القاعدة** (فحص ينتظر القاعدة يخلق restart loop) |
+| `/ready` | هل نرسل حركة مرور؟ `SELECT 1` ⇒ 200، وإلا 503 مع `checks[0].error` |
 
 ---
 
 ## 📡 API Endpoints
+
+### Ops (مراقبة)
+- `GET /health` — العملية تعمل (200 دائماً، لا يلمس القاعدة)
+- `GET /ready` — القاعدة تجيب: 200 `{"ready": true, ...}` أو 503 `{"ready": false, "checks": [...]}`
 
 ### Donors
 | Method | Endpoint | Description |
