@@ -10,4 +10,4 @@ alembic>=1.13,<2
 # postgres:// and postgresql:// to postgresql+psycopg:// — see models/database.py.
 psycopg[binary]>=3.2,<4
 # WSGI server for the container (Flask's dev server is not one).
-gunicorn>=22,<24
+gunicorn>=26.2.0,<27
