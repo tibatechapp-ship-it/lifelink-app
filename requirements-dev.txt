@@ -2,4 +2,4 @@
 pytest>=9.1.1,<10
 ruff>=0.9
 # tests/test_deploy.py parses docker-compose.yml and the Dockerfile
-pyyaml>=6.0
+pyyaml>=6.0.3
