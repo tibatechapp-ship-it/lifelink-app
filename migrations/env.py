@@ -33,6 +33,20 @@ if config.config_file_name is not None:
 
 target_metadata = db.metadata
 
+
+def include_object(obj, name, type_, reflected, compare_to):
+    """Filter which objects autogenerate/``alembic check`` considers.
+
+    The GIN trigram indexes (``ix_*_city_trgm``) are created by raw SQL in
+    migration ``a1f2c3d4e5b6`` — deliberately outside the model metadata so
+    the SQLite dev/test path (``create_all``) never sees PostgreSQL-specific
+    DDL. Because they exist in the database but not in the metadata, the
+    autogenerate diff would try to DROP them; exclude them by name instead.
+    """
+    if type_ == "index" and name and name.endswith("_city_trgm"):
+        return False
+    return True
+
 # The app's URL wins; alembic.ini deliberately carries no sqlalchemy.url so a
 # committed file can never point at a stale/local database by accident.
 _base_dir = str(Path(__file__).resolve().parent.parent)
@@ -67,6 +81,7 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
+            include_object=include_object,
             # SQLite cannot ALTER most things in place; batch mode rewrites the
             # table instead. Harmless (and unused) on Postgres.
             render_as_batch=_url.startswith("sqlite"),
