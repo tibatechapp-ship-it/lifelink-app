@@ -43,9 +43,7 @@ def include_object(obj, name, type_, reflected, compare_to):
     DDL. Because they exist in the database but not in the metadata, the
     autogenerate diff would try to DROP them; exclude them by name instead.
     """
-    if type_ == "index" and name and name.endswith("_city_trgm"):
-        return False
-    return True
+    return not (type_ == "index" and name and name.endswith("_city_trgm"))
 
 # The app's URL wins; alembic.ini deliberately carries no sqlalchemy.url so a
 # committed file can never point at a stale/local database by accident.
@@ -62,6 +60,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        include_object=include_object,
         render_as_batch=_url.startswith("sqlite"),
     )
     with context.begin_transaction():
