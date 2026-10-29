@@ -9,7 +9,12 @@ from __future__ import annotations
 
 import pytest
 
-from models.database import database_uri, engine_options, normalize_database_url
+from models.database import (
+    database_uri,
+    engine_options,
+    migration_engine_options,
+    normalize_database_url,
+)
 
 
 @pytest.mark.parametrize(
@@ -53,3 +58,11 @@ def test_network_databases_get_a_pre_ping_pool() -> None:
 
 def test_sqlite_needs_no_pool_options() -> None:
     assert engine_options("sqlite:///tmp/x.db") == {}
+
+
+def test_migration_options_fit_a_null_pool() -> None:
+    """Alembic uses NullPool, which has no pool to size (TypeError otherwise)."""
+    options = migration_engine_options("postgresql+psycopg://u:p@db/app")
+    assert options == {"pool_pre_ping": True}
+    assert engine_options("postgresql+psycopg://u:p@db/app")["pool_size"] == 5
+    assert migration_engine_options("sqlite:///tmp/x.db") == {}

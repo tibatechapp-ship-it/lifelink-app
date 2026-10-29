@@ -23,7 +23,7 @@ from sqlalchemy import engine_from_config, pool
 # container, `alembic` is invoked from /app, but a CI step may not be).
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
-from models.database import database_uri, engine_options
+from models.database import database_uri, migration_engine_options
 from models.models import db
 
 config = context.config
@@ -60,7 +60,7 @@ def run_migrations_online() -> None:
         config.get_section(config.config_ini_section, {}),
         prefix="sqlalchemy.",
         poolclass=pool.NullPool,
-        **engine_options(_url),
+        **migration_engine_options(_url),
     )
     with connectable.connect() as connection:
         context.configure(

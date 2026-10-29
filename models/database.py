@@ -53,3 +53,17 @@ def engine_options(uri: str) -> dict[str, object]:
     if not uri.startswith("sqlite"):
         return {"pool_pre_ping": True, "pool_recycle": 1800, "pool_size": 5, "max_overflow": 10}
     return {}
+
+
+def migration_engine_options(uri: str) -> dict[str, object]:
+    """Pool options Alembic may use.
+
+    Migrations run in a short-lived process that closes its single connection
+    when it exits, so the environment configures ``NullPool``. ``NullPool`` has
+    no pool to size — passing ``pool_size``/``max_overflow`` raises
+    ``TypeError: Invalid argument(s) 'pool_size','max_overflow'`` — so only
+    ``pool_pre_ping`` survives here.
+    """
+    if uri.startswith("sqlite"):
+        return {}
+    return {"pool_pre_ping": True}
