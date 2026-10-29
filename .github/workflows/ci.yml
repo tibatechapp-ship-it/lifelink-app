@@ -55,6 +55,7 @@ jobs:
     env:
       DATABASE_URL: postgres://lifelink:lifelink@127.0.0.1:5432/lifelink
       SECRET_KEY: ci-secret
+      FIELD_ENCRYPTION_KEY: dummy_key_for_ci_only_123456789012=
       FLASK_ENV: production
     steps:
       - uses: actions/checkout@v4
