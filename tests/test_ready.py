@@ -41,12 +41,18 @@ def test_ready_is_200_when_the_database_answers(client):
     assert body["checks"][0]["ok"] is True
 
 
-def test_ready_body_shape_is_identical_on_failure(tmp_path, monkeypatch):
-    # A directory that cannot exist → the engine cannot even open a connection.
+def test_ready_body_shape_is_identical_on_failure(monkeypatch):
+    """An unreachable database must answer 503 with the same keys, not raise.
+
+    Postgres on a closed port (not SQLite) because SQLite failure happens at
+    create_all() time — before the request — which is exactly why create_all is
+    gated to SQLite. Needs psycopg, so this runs in CI and the image job.
+    """
+    pytest.importorskip("psycopg", reason="psycopg is installed in CI/deploy only")
     monkeypatch.setenv("SECRET_KEY", "test-secret")
-    monkeypatch.setenv("DATABASE_URL", "sqlite:////nonexistent-dir/never/ready.db")
-    monkeypatch.setenv("RATE_LIMIT_ENABLED", "0")
-    monkeypatch.setenv("FIELD_ENCRYPTION_KEY", "ready-test-key-32-bytes-long!!!!!")
+    monkeypatch.setenv("FLASK_ENV", "production")
+    # Port 1 is closed: the driver fails fast instead of hanging the probe.
+    monkeypatch.setenv("DATABASE_URL", "postgresql://u:p@127.0.0.1:1/lifelink")
     app = create_app()
     app.config["TESTING"] = True
     with app.test_client() as c:
