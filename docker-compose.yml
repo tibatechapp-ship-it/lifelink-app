@@ -1,0 +1,100 @@
+# ═══════════════════════════════════════════════════════════════════════════
+# LifeLink — app + PostgreSQL (no SQLite in production)
+# ═══════════════════════════════════════════════════════════════════════════
+#
+#   cp .env.example .env     # set DB_PASSWORD and SECRET_KEY
+#   docker compose up -d --build
+#   curl http://localhost:5000/ready
+#
+# Secrets come from the environment only: `${SECRET_KEY:?}` and
+# `${DB_PASSWORD:?}` make compose refuse to start rather than boot a
+# production instance with a generated, restart-losing session key.
+#
+# The app reads a single DATABASE_URL. It is written here in the plain
+# `postgresql://` form ON PURPOSE: models/database.py rewrites it to
+# `postgresql+psycopg://`, so compose exercises the same normalisation path the
+# platform does (Render/Heroku hand out `postgres://`). Use a URL-safe password
+# (letters/digits) or percent-encode the special characters.
+
+name: lifelink
+
+x-logging: &default-logging
+  driver: json-file
+  options:
+    max-size: "10m"
+    max-file: "3"
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lifelink:${IMAGE_TAG:-local}
+    restart: unless-stopped
+    init: true
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      FLASK_ENV: ${FLASK_ENV:-production}
+      SECRET_KEY: ${SECRET_KEY:?SECRET_KEY is required — see .env.example}
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY:-}
+      DATABASE_URL: postgresql://${DB_USER:-lifelink}:${DB_PASSWORD:?DB_PASSWORD is required — see .env.example}@postgres:5432/${DB_NAME:-lifelink}
+      RATE_LIMIT_ENABLED: ${RATE_LIMIT_ENABLED:-1}
+      FIELD_ENCRYPTION_KEY: ${FIELD_ENCRYPTION_KEY:-}
+      WEB_CONCURRENCY: ${WEB_CONCURRENCY:-2}
+      TZ: ${TZ:-UTC}
+    ports:
+      - "${APP_PORT:-5000}:5000"
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - |
+          import sys, urllib.request
+          r = urllib.request.urlopen("http://127.0.0.1:5000/health", timeout=4)
+          sys.exit(0 if r.status == 200 else 1)
+      interval: 30s
+      timeout: 5s
+      start_period: 25s
+      retries: 3
+    read_only: true
+    tmpfs:
+      - /tmp:size=32m,mode=1777
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    logging: *default-logging
+    networks:
+      - lifelink
+
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-lifelink}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required — see .env.example}
+      POSTGRES_DB: ${DB_NAME:-lifelink}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - lifelink_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 15s
+    expose:
+      - "5432"
+    logging: *default-logging
+    networks:
+      - lifelink
+
+networks:
+  lifelink:
+    driver: bridge
+
+volumes:
+  lifelink_pgdata:

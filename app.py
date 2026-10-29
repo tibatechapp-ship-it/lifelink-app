@@ -4,6 +4,7 @@ import os
 
 from flask import Flask, jsonify, render_template
 
+from models.database import database_uri, engine_options
 from models.models import db
 from routes.auth_routes import auth_bp
 from routes.donor_routes import donor_bp
@@ -11,12 +12,15 @@ from routes.emergency_routes import emergency_bp
 from routes.middleware import register_middleware
 
 BASE_DIR = os.path.abspath(os.path.dirname(__file__))
+VERSION = "1.0.0"
 DB_PATH = os.environ.get("LIFELINK_DB_PATH", os.path.join(BASE_DIR, "lifelink.db"))
 
 
 def create_app():
     app = Flask(__name__)
-    app.config["SQLALCHEMY_DATABASE_URI"] = os.environ.get("DATABASE_URL", f"sqlite:///{DB_PATH}")
+    uri = database_uri(DB_PATH)
+    app.config["SQLALCHEMY_DATABASE_URI"] = uri
+    app.config["SQLALCHEMY_ENGINE_OPTIONS"] = engine_options(uri)
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
     secret = os.environ.get("SECRET_KEY")
     if not secret:
@@ -37,8 +41,13 @@ def create_app():
     app.register_blueprint(auth_bp)
     register_middleware(app)
 
-    with app.app_context():
-        db.create_all()
+    # SQLite (local dev, tests) has no migration step — tables are created here.
+    # Postgres is owned by Alembic: create_all() would silently create missing
+    # tables instead of failing, so a container that skipped `alembic upgrade`
+    # would look healthy while running an outdated schema.
+    if uri.startswith("sqlite"):
+        with app.app_context():
+            db.create_all()
 
     # ---- Page routes ----
     @app.route("/")
@@ -53,9 +62,42 @@ def create_app():
     def emergencies_page():
         return render_template("emergencies.html")
 
+    # Liveness: the process answers, with or without a database. A healthcheck
+    # that needs Postgres turns a database outage into a restart loop.
     @app.route("/health")
     def health():
-        return jsonify({"status": "ok", "service": "lifelink", "version": "1.0.0"})
+        return jsonify({"status": "ok", "service": "lifelink", "version": VERSION})
+
+    # Readiness: may traffic be sent here? Same body shape on both paths so one
+    # log line explains a failing rollout.
+    @app.route("/ready")
+    def ready():
+        import time
+
+        from sqlalchemy import text
+
+        started = time.monotonic()
+        checks = []
+        try:
+            db.session.execute(text("SELECT 1"))
+            checks.append({"name": "database", "ok": True, "detail": "SELECT 1"})
+        except Exception as exc:  # noqa: BLE001 - a probe must never raise
+            checks.append({"name": "database", "ok": False, "error": f"{type(exc).__name__}: {exc}"})
+        finally:
+            db.session.rollback()
+        is_ready = all(check["ok"] for check in checks)
+        return (
+            jsonify(
+                {
+                    "ready": is_ready,
+                    "status": "ready" if is_ready else "not_ready",
+                    "version": VERSION,
+                    "checks": checks,
+                    "latency_ms": round((time.monotonic() - started) * 1000, 1),
+                }
+            ),
+            200 if is_ready else 503,
+        )
 
     return app
 

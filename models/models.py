@@ -5,9 +5,18 @@ from datetime import UTC, datetime
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from models.encryption import decrypt_field
-
 db = SQLAlchemy()
+
+
+def _decrypt(value):
+    """Decrypt a field, importing the crypto backend lazily.
+
+    The model module is the schema definition: migrations and metadata work must
+    not require a native crypto extension just to read columns.
+    """
+    from models.encryption import decrypt_field
+
+    return decrypt_field(value)
 
 
 class Donor(db.Model):
@@ -42,11 +51,11 @@ class Donor(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
-            "name": decrypt_field(self.name),
+            "name": _decrypt(self.name),
             "email": self.email,
-            "phone": decrypt_field(self.phone),
+            "phone": _decrypt(self.phone),
             "blood_type": self.blood_type,
-            "city": decrypt_field(self.city),
+            "city": _decrypt(self.city),
             "age": self.age,
             "weight": self.weight,
             "last_donation": self.last_donation.isoformat() if self.last_donation else None,
@@ -78,12 +87,12 @@ class EmergencyRequest(db.Model):
     def to_dict(self):
         return {
             "id": self.id,
-            "patient_name": decrypt_field(self.patient_name),
+            "patient_name": _decrypt(self.patient_name),
             "blood_type": self.blood_type,
             "units_needed": self.units_needed,
-            "hospital": decrypt_field(self.hospital),
+            "hospital": _decrypt(self.hospital),
             "city": self.city,
-            "contact_phone": decrypt_field(self.contact_phone),
+            "contact_phone": _decrypt(self.contact_phone),
             "urgency": self.urgency,
             "status": self.status,
             "notes": self.notes,

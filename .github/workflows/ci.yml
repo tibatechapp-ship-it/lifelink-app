@@ -1,4 +1,5 @@
 name: ci
+
 on:
   push: { branches: [main] }
   pull_request:
@@ -10,17 +11,145 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      # fetch-depth 0: gitleaks scans the PR's commit RANGE. On a shallow clone
+      # it scans nothing ("scanned ~0 bytes") and exits 1.
       - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
       - uses: actions/setup-python@v5
         with: { python-version: "3.11" }
       - name: Install
         run: |
           python -m pip install -U pip
-          pip install ruff pytest
-          pip install -r requirements.txt
+          pip install -r requirements.txt -r requirements-dev.txt
       - name: Lint
         run: ruff check .
       - name: Test
         run: pytest -q
       - name: Secrets
         uses: gitleaks/gitleaks-action@v2
+        env:
+          # Required since the action's breaking update: PR scans need the
+          # workflow token, otherwise the step fails before scanning anything.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  # The migration is the production schema — SQLite autogenerate can hide
+  # dialect problems, so it is applied to a REAL Postgres here: upgrade twice
+  # (must be idempotent), downgrade to base, upgrade again, then `alembic check`
+  # fails the build if models and migrations have drifted apart.
+  migrations:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lifelink
+          POSTGRES_PASSWORD: lifelink
+          POSTGRES_DB: lifelink
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U lifelink"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    env:
+      DATABASE_URL: postgres://lifelink:lifelink@127.0.0.1:5432/lifelink
+      SECRET_KEY: ci-secret
+      FLASK_ENV: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.11" }
+      - name: Install
+        run: |
+          python -m pip install -U pip
+          pip install -r requirements.txt
+      - name: Upgrade (twice — must be idempotent)
+        run: |
+          alembic upgrade head
+          alembic upgrade head
+          alembic current
+      - name: Reversible
+        run: |
+          alembic downgrade base
+          alembic upgrade head
+      - name: No model/migration drift
+        run: alembic check
+      - name: Schema is what the app expects
+        run: |
+          python - <<'PY'
+          import os
+          from sqlalchemy import create_engine, inspect, text
+
+          from models.database import normalize_database_url
+
+          engine = create_engine(normalize_database_url(os.environ["DATABASE_URL"]))
+          tables = set(inspect(engine).get_table_names())
+          assert {"donors", "emergency_requests", "alembic_version"} <= tables, tables
+          with engine.connect() as conn:
+              assert conn.execute(text("select 1")).scalar_one() == 1
+          print("schema ok:", sorted(tables))
+          PY
+      - name: Readiness against Postgres
+        run: |
+          python - <<'PY'
+          import json, os
+          from app import create_app
+
+          app = create_app()
+          c = app.test_client()
+          r = c.get("/ready")
+          body = json.loads(r.data)
+          print(json.dumps(body, indent=2))
+          assert r.status_code == 200, body
+          assert body["checks"][0]["ok"] is True
+          assert c.get("/health").status_code == 200
+          PY
+
+  # The container is the deployable artefact: build it, let the entrypoint
+  # migrate Postgres, and require /ready to answer 200 on the real image.
+  image:
+    runs-on: ubuntu-latest
+    needs: [test]
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: lifelink
+          POSTGRES_PASSWORD: lifelink
+          POSTGRES_DB: lifelink
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U lifelink"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t lifelink:ci .
+      - name: Run image (entrypoint migrates, then gunicorn serves)
+        run: |
+          docker run -d --name lifelink --network host \
+            -e SECRET_KEY=ci-secret \
+            -e FLASK_ENV=production \
+            -e DATABASE_URL=postgres://lifelink:lifelink@127.0.0.1:5432/lifelink \
+            lifelink:ci
+      - name: Wait for readiness
+        run: |
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:5000/ready > /tmp/ready.json 2>/dev/null; then
+              cat /tmp/ready.json; echo; exit 0
+            fi
+            sleep 2
+          done
+          echo "::error::/ready never returned 200"
+          docker logs lifelink
+          exit 1
+      - name: Version + schema inside the container
+        run: |
+          curl -fsS http://127.0.0.1:5000/health
+          docker exec lifelink alembic current
+          docker exec lifelink alembic check
+      - name: Logs
+        if: always()
+        run: docker logs lifelink || true
