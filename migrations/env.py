@@ -33,6 +33,21 @@ if config.config_file_name is not None:
 
 target_metadata = db.metadata
 
+
+def include_object(obj, name, type_, reflected, compare_to):
+    """Keep migration-managed objects out of the autogenerate comparison.
+
+    The GIN trigram indexes (``*_trgm``) exist only on PostgreSQL, depend on
+    the ``pg_trgm`` extension being grantable, and are created/managed
+    exclusively by migration ``a1f2c3d4e5b6`` — deliberately NOT declared in
+    model metadata (an expression index with dialect-specific ops cannot be
+    represented portably across sqlite/Postgres). Without this filter,
+    ``alembic check`` compares a Postgres schema against the models and
+    reports those indexes as "removed", failing CI drift detection forever.
+    """
+    return not (type_ == "index" and name and name.endswith("_trgm"))
+
+
 # The app's URL wins; alembic.ini deliberately carries no sqlalchemy.url so a
 # committed file can never point at a stale/local database by accident.
 _base_dir = str(Path(__file__).resolve().parent.parent)
@@ -48,6 +63,7 @@ def run_migrations_offline() -> None:
         literal_binds=True,
         dialect_opts={"paramstyle": "named"},
         compare_type=True,
+        include_object=include_object,
         render_as_batch=_url.startswith("sqlite"),
     )
     with context.begin_transaction():
@@ -67,6 +83,7 @@ def run_migrations_online() -> None:
             connection=connection,
             target_metadata=target_metadata,
             compare_type=True,
+            include_object=include_object,
             # SQLite cannot ALTER most things in place; batch mode rewrites the
             # table instead. Harmless (and unused) on Postgres.
             render_as_batch=_url.startswith("sqlite"),
