@@ -1,5 +1,5 @@
 # Developer/CI-only tooling. Production installs requirements.txt alone.
 pytest>=9.1.1,<10
-ruff>=0.9
+ruff>=0.17.2
 # tests/test_deploy.py parses docker-compose.yml and the Dockerfile
 pyyaml>=6.0.3
