@@ -5,78 +5,132 @@
 <section class="max-w-7xl mx-auto px-4 py-10">
   <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
     <div>
-      <h1 class="text-3xl sm:text-4xl font-black text-blood-700">🚨 حالات عاجلة</h1>
-      <p class="text-gray-600 mt-1">قائمة طلبات الدم المفتوحة — كل ثانية تهم.</p>
+      <h1 class="text-3xl sm:text-4xl font-black text-blood-700"><span aria-hidden="true">🚨</span> حالات عاجلة</h1>
+      <p class="text-gray-600 mt-1">قائمة طلبات الدم المفتوحة — كل ثانية تهم. النشر متاح للجميع دون تسجيل.</p>
     </div>
-    <button onclick="openNewReq()" class="px-6 py-3 rounded-full bg-blood-600 text-white font-bold shadow-lg shadow-red-200 hover:bg-blood-700 transition">
+    <button id="openReqBtn" class="btn btn-primary rounded-full shadow-lg shadow-red-200">
       + نداء استغاثة جديد
     </button>
   </div>
 
   <!-- Filters -->
   <div class="bg-white rounded-2xl shadow p-4 mb-6 flex flex-wrap gap-3 items-center">
+    <label class="sr-only" for="fBlood">تصفية حسب الفصيلة</label>
     <select id="fBlood" class="px-3 py-2 rounded-lg border border-gray-200">
       <option value="">كل الفصائل</option>
       <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
       <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
     </select>
-    <input id="fCity" placeholder="المدينة" class="px-3 py-2 rounded-lg border border-gray-200">
+    <label class="sr-only" for="fCity">تصفية حسب المدينة</label>
+    <input id="fCity" placeholder="المدينة" aria-label="تصفية حسب المدينة" class="px-3 py-2 rounded-lg border border-gray-200">
+    <label class="sr-only" for="fUrgency">تصفية حسب مستوى الاستعجال</label>
     <select id="fUrgency" class="px-3 py-2 rounded-lg border border-gray-200">
       <option value="">كل المستويات</option>
       <option value="critical">حرجة</option>
       <option value="urgent">عاجلة</option>
       <option value="normal">عادية</option>
     </select>
+    <label class="sr-only" for="fStatus">تصفية حسب الحالة</label>
     <select id="fStatus" class="px-3 py-2 rounded-lg border border-gray-200">
       <option value="open">مفتوحة</option>
       <option value="">الكل</option>
       <option value="fulfilled">تم التلبية</option>
       <option value="closed">مغلقة</option>
     </select>
-    <button onclick="loadList()" class="px-5 py-2 rounded-lg bg-blood-600 text-white font-bold hover:bg-blood-700 transition">بحث</button>
+    <button id="searchBtn" class="btn btn-primary rounded-lg">بحث</button>
   </div>
 
-  <div id="list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+  <div id="list" class="grid md:grid-cols-2 lg:grid-cols-3 gap-4" aria-live="polite"></div>
   <div id="empty" class="hidden text-center py-16 text-gray-500 text-lg">لا توجد حالات مطابقة 🎉</div>
 </section>
 
 <!-- New request modal -->
-<div id="modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+<div id="modal" class="hidden fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
   <div class="bg-white rounded-3xl max-w-lg w-full p-8 max-h-[90vh] overflow-y-auto">
     <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-black text-blood-700">🚨 نداء استغاثة جديد</h2>
-      <button onclick="closeModal()" class="text-2xl text-gray-400 hover:text-gray-600">✕</button>
+      <h2 id="modalTitle" class="text-2xl font-black text-blood-700"><span aria-hidden="true">🚨</span> نداء استغاثة جديد</h2>
+      <button id="closeModalBtn" aria-label="إغلاق النافذة" class="text-2xl text-gray-500 hover:text-gray-700">✕</button>
     </div>
     <form id="reqForm" class="space-y-4">
-      <input name="patient_name" required placeholder="اسم المريض" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 outline-none">
-      <div class="grid grid-cols-2 gap-3">
-        <select name="blood_type" required class="px-4 py-3 rounded-xl border border-gray-200">
-          <option value="">فصيلة الدم</option>
-          <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
-          <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
-        </select>
-        <input name="units_needed" type="number" min="1" value="1" required placeholder="الوحدات" class="px-4 py-3 rounded-xl border border-gray-200">
+      <div>
+        <label for="req-patient" class="block text-sm font-bold mb-1">اسم المريض *</label>
+        <input id="req-patient" name="patient_name" required autocomplete="off" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition">
       </div>
-      <input name="hospital" required placeholder="اسم المستشفى" class="w-full px-4 py-3 rounded-xl border border-gray-200">
-      <input name="city" required placeholder="المدينة" class="w-full px-4 py-3 rounded-xl border border-gray-200">
-      <input name="contact_phone" required placeholder="رقم التواصل" class="w-full px-4 py-3 rounded-xl border border-gray-200">
-      <select name="urgency" class="w-full px-4 py-3 rounded-xl border border-gray-200">
-        <option value="critical">حرجة — فوري</option>
-        <option value="urgent" selected>عاجلة</option>
-        <option value="normal">عادية</option>
-      </select>
-      <textarea name="notes" placeholder="ملاحظات إضافية" class="w-full px-4 py-3 rounded-xl border border-gray-200" rows="3"></textarea>
-      <button type="submit" class="w-full py-3 rounded-xl bg-blood-600 text-white font-bold hover:bg-blood-700 transition">إرسال النداء</button>
+      <div class="grid grid-cols-2 gap-3">
+        <div>
+          <label for="req-blood" class="block text-sm font-bold mb-1">فصيلة الدم *</label>
+          <select id="req-blood" name="blood_type" required class="w-full px-4 py-3 rounded-xl border border-gray-200">
+            <option value="">اختر الفصيلة</option>
+            <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
+            <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
+          </select>
+        </div>
+        <div>
+          <label for="req-units" class="block text-sm font-bold mb-1">عدد الوحدات *</label>
+          <input id="req-units" name="units_needed" type="number" min="1" max="100" value="1" required class="w-full px-4 py-3 rounded-xl border border-gray-200">
+        </div>
+      </div>
+      <div>
+        <label for="req-hospital" class="block text-sm font-bold mb-1">اسم المستشفى *</label>
+        <input id="req-hospital" name="hospital" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition">
+      </div>
+      <div>
+        <label for="req-city" class="block text-sm font-bold mb-1">المدينة *</label>
+        <input id="req-city" name="city" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition">
+      </div>
+      <div>
+        <label for="req-phone" class="block text-sm font-bold mb-1">رقم التواصل *</label>
+        <input id="req-phone" name="contact_phone" type="tel" inputmode="tel" autocomplete="tel" required placeholder="+964 7XX XXX XXXX" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition">
+      </div>
+      <div>
+        <label for="req-urgency" class="block text-sm font-bold mb-1">درجة الاستعجال</label>
+        <select id="req-urgency" name="urgency" class="w-full px-4 py-3 rounded-xl border border-gray-200">
+          <option value="critical">حرجة — فوري</option>
+          <option value="urgent" selected>عاجلة</option>
+          <option value="normal">عادية</option>
+        </select>
+      </div>
+      <div>
+        <label for="req-notes" class="block text-sm font-bold mb-1">ملاحظات إضافية (اختياري)</label>
+        <textarea id="req-notes" name="notes" class="w-full px-4 py-3 rounded-xl border border-gray-200" rows="3"></textarea>
+      </div>
+      <button type="submit" id="reqSubmit" class="btn btn-primary w-full text-lg">إرسال النداء</button>
     </form>
-    <div id="reqResult" class="mt-4 hidden"></div>
+    <div id="reqResult" class="mt-4 hidden" role="alert" aria-live="assertive"></div>
   </div>
 </div>
 {% endblock %}
 
 {% block extra_scripts %}
 <script>
-  function openNewReq(){ document.getElementById('modal').classList.remove('hidden'); }
-  function closeModal(){ document.getElementById('modal').classList.add('hidden'); }
+  // ---- Modal (accessible: Escape + backdrop + focus management) ----
+  const modal = document.getElementById('modal');
+  let lastFocused = null;
+  function openNewReq() {
+    lastFocused = document.activeElement;
+    modal.classList.remove('hidden');
+    const first = modal.querySelector('input, select, textarea');
+    if (first) first.focus();
+  }
+  function closeModal() {
+    modal.classList.add('hidden');
+    if (lastFocused) { try { lastFocused.focus(); } catch (e) {} lastFocused = null; }
+  }
+  document.getElementById('openReqBtn').addEventListener('click', openNewReq);
+  document.getElementById('closeModalBtn').addEventListener('click', closeModal);
+  modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal();
+  });
+
+  document.getElementById('searchBtn').addEventListener('click', loadList);
+  ['fBlood','fCity','fUrgency','fStatus'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('change', loadList);
+    el.addEventListener('keydown', (e) => { if (e.key === 'Enter') loadList(); });
+  });
+
+  const URGENCY = window.LL_URGENCY, STATUS = window.LL_STATUS;
 
   async function loadList() {
     const bt = document.getElementById('fBlood').value;
@@ -88,58 +142,136 @@
     if (city) params.set('city', city);
     if (urg) params.set('urgency', urg);
     if (st) params.set('status', st);
-    const res = await fetch('/api/emergencies?' + params.toString());
-    const data = await res.json();
     const list = document.getElementById('list');
     const empty = document.getElementById('empty');
-    if (!data.requests.length) { list.innerHTML=; empty.classList.remove('hidden'); return; }
-    empty.classList.add('hidden');
-    list.innerHTML = data.requests.map(r => `
-      <div class="bg-white rounded-2xl p-5 shadow card-hover border-t-4 ${r.urgency==='critical'?'border-blood-700':r.urgency==='urgent'?'border-blood-500':'border-hope-500'}">
-        <div class="flex justify-between items-start mb-2">
-          <span class="text-2xl font-black text-blood-700">${r.blood_type}</span>
-          <span class="text-xs px-2 py-1 rounded-full font-bold ${r.urgency==='critical'?'bg-blood-100 text-blood-700':r.urgency==='urgent'?'bg-orange-100 text-orange-700':'bg-hope-100 text-hope-600'}">${r.urgency==='critical'?'حرجة':r.urgency==='urgent'?'عاجلة':'عادية'}</span>
-        </div>
-        <div class="font-bold text-gray-800">${esc(r.patient_name)}</div>
-        <div class="text-sm text-gray-500 mt-1">🏥 ${esc(r.hospital)}</div>
-        <div class="text-sm text-gray-500">📍 ${esc(r.city)}</div>
-        <div class="text-sm text-gray-500">📞 ${esc(r.contact_phone)}</div>
-        <div class="text-sm text-gray-500">📦 ${r.units_needed} وحدة · ${r.status}</div>
-        ${r.notes ? '<div class="text-sm text-gray-400 mt-2 italic">'+esc(r.notes)+'</div>' : ''}
+    try {
+      const res = await fetch('/api/emergencies?' + params.toString());
+      const data = await res.json();
+      if (!data.requests.length) {
+        list.innerHTML = '';
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+      list.innerHTML = data.requests.map(r => `
+        <article class="bg-white rounded-2xl p-5 shadow card-hover border-t-4 ${r.urgency==='critical'?'border-blood-700':r.urgency==='urgent'?'border-blood-500':'border-hope-500'}">
+          <div class="flex justify-between items-start mb-2">
+            <span class="text-2xl font-black text-blood-700">${esc(r.blood_type)}</span>
+            <span class="text-xs px-2 py-1 rounded-full font-bold ${r.urgency==='critical'?'bg-blood-100 text-blood-700':r.urgency==='urgent'?'bg-orange-100 text-orange-700':'bg-hope-100 text-hope-700'}">${URGENCY[r.urgency] || esc(r.urgency)}</span>
+          </div>
+          <div class="text-sm text-gray-500">📍 ${esc(r.city)}</div>
+          <!-- privacy (security-p0): القوائم العامة بلا PII — التفاصيل الكاملة تُجلب عند الطلب -->
+          <button onclick="toggleDetails(${r.id}, this)" aria-expanded="false" aria-controls="det-${r.id}" class="mt-3 w-full px-4 py-2 min-h-[44px] rounded-full bg-blood-600 text-white font-bold hover:bg-blood-700 transition disabled:opacity-60">🔎 تفاصيل واستجابة</button>
+          <div id="det-${r.id}" class="hidden mt-3 text-sm border-t border-gray-100 pt-3" role="region" aria-label="تفاصيل الطلب"></div>
+        </article>
+      `).join('');
+    } catch (err) {
+      list.innerHTML = '<div class="col-span-full text-center text-blood-700 bg-blood-50 rounded-xl p-6">تعذر تحميل القائمة — تحقق من الاتصال وأعد المحاولة.</div>';
+    }
+  }
+
+  async function toggleDetails(id, btn) {
+    const box = document.getElementById('det-'+id);
+    const isOpen = !box.classList.contains('hidden');
+    if (isOpen) {
+      box.classList.add('hidden');
+      btn.setAttribute('aria-expanded', 'false');
+      btn.textContent = '🔎 تفاصيل واستجابة';
+      return;
+    }
+    btn.disabled = true;
+    try {
+      const res = await fetch('/api/emergencies/'+id);
+      if (res.status === 401 || res.status === 403) {
+        // privacy-first: التفاصيل الشخصية للمستخدمين الموثوقين فقط — لا بيانات فارغة مكسورة بل إرشاد واعٍ
+        box.innerHTML = '<div class="p-3 rounded-xl bg-amber-50 text-amber-800" role="note">🔒 التفاصيل الكاملة (اسم المريض، المستشفى، رقم التواصل) متاحة لحسابات موثوقة (مراكز الدم والمستشفيات) حفاظاً على خصوصية المرضى. فصيلتك مطابقة والمدينة قريبة؟ تواصل مع أقرب مركز دم أو سجّل كمتبرع ليصلك التنسيق.</div>';
+        box.classList.remove('hidden');
+        btn.setAttribute('aria-expanded', 'true');
+        return;
+      }
+      if (!res.ok) {
+        box.innerHTML = '<div class="p-3 rounded-xl bg-blood-50 text-blood-700">تعذر جلب التفاصيل ('+res.status+') — أعد المحاولة.</div>';
+        box.classList.remove('hidden');
+        return;
+      }
+      const d = await res.json();
+      box.innerHTML = `
+        <div class="font-bold text-gray-800">🧑 ${esc(d.patient_name)}</div>
+        <div class="text-gray-500 mt-1">🏥 ${esc(d.hospital)} · 📦 ${d.units_needed} وحدة · ${STATUS[d.status] || esc(d.status)}</div>
+        ${d.contact_phone ? `<a href="tel:${esc(d.contact_phone)}" class="inline-block mt-1 text-hope-700 hover:text-hope-800 underline decoration-dotted font-bold">📞 ${esc(d.contact_phone)}</a>` : ''}
+        ${d.notes ? `<div class="text-gray-500 mt-2 italic">${esc(d.notes)}</div>` : ''}
         <div class="flex gap-2 mt-3">
-          ${r.status==='open' ? `<button onclick="fulfill(${r.id})" class="text-xs px-3 py-1 rounded-full bg-hope-100 text-hope-600 font-bold hover:bg-hope-200 transition">✅ تم التلبية</button>` : }
-          <button onclick="removeReq(${r.id})" class="text-xs px-3 py-1 rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition">🗑 حذف</button>
-        </div>
-      </div>
-    `).join();
+          ${d.status==='open' ? `<button onclick="fulfill(${d.id})" class="text-sm px-4 py-2 min-h-[44px] rounded-full bg-hope-100 text-hope-700 font-bold hover:bg-hope-200 transition">✅ تم التلبية</button>` : ''}
+          <button onclick="removeReq(${d.id})" class="text-sm px-4 py-2 min-h-[44px] rounded-full bg-gray-100 text-gray-600 font-bold hover:bg-gray-200 transition">🗑 حذف</button>
+        </div>`;
+      box.classList.remove('hidden');
+      btn.setAttribute('aria-expanded', 'true');
+      btn.textContent = 'إغلاق التفاصيل';
+    } catch (err) {
+      box.innerHTML = '<div class="p-3 rounded-xl bg-blood-50 text-blood-700">تعذر الاتصال — تحقق من الشبكة وأعد المحاولة.</div>';
+      box.classList.remove('hidden');
+    } finally {
+      btn.disabled = false;
+    }
   }
 
   async function fulfill(id) {
-    await fetch('/api/emergencies/'+id, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:'fulfilled'})});
+    const res = await fetch('/api/emergencies/'+id, {method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({status:'fulfilled'})});
+    if (!res.ok) {
+      const json = await res.json().catch(()=>({}));
+      alertBox((json.error === 'Forbidden') ? 'تحديث الحالة متاح لمراكز الدم والمستشفيات فقط.' : 'تعذر تحديث الحالة (' + res.status + ').');
+      return;
+    }
     loadList();
   }
   async function removeReq(id) {
     if (!confirm('حذف هذا الطلب؟')) return;
-    await fetch('/api/emergencies/'+id, {method:'DELETE'});
+    const res = await fetch('/api/emergencies/'+id, {method:'DELETE'});
+    if (!res.ok) {
+      const json = await res.json().catch(()=>({}));
+      alertBox((json.error === 'Forbidden') ? 'الحذف متاح للمراكز والمشرفين فقط.' : 'تعذر الحذف (' + res.status + ').');
+      return;
+    }
     loadList();
+  }
+  function alertBox(msg) {
+    const box = document.getElementById('reqResult');
+    modal.classList.remove('hidden');
+    box.classList.remove('hidden');
+    box.className = 'mt-4 p-3 rounded-xl bg-blood-100 text-blood-700 font-bold';
+    box.textContent = msg;
   }
 
   document.getElementById('reqForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const data = Object.fromEntries(new FormData(e.target));
+    const form = e.target;
+    const btn = document.getElementById('reqSubmit');
+    const data = Object.fromEntries(new FormData(form));
     data.units_needed = parseInt(data.units_needed);
-    const res = await fetch('/api/emergencies', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
-    const json = await res.json();
-    const box = document.getElementById('reqResult');
-    box.classList.remove('hidden');
-    if (res.ok) {
-      box.className = 'mt-4 p-3 rounded-xl bg-hope-100 text-hope-600 font-bold';
-      box.innerHTML = '✅ تم نشر النداء (ID: ' + json.id + ')';
-      e.target.reset();
-      loadList();
-    } else {
-      box.className = 'mt-4 p-3 rounded-xl bg-blood-100 text-blood-700 font-bold';
-      box.innerHTML = '❌ ' + (json.error || 'خطأ');
+    btn.disabled = true;
+    const original = btn.textContent;
+    btn.textContent = 'جارٍ الإرسال...';
+    try {
+      const res = await fetch('/api/emergencies', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(data)});
+      const json = await res.json().catch(()=>({}));
+      const box = document.getElementById('reqResult');
+      box.classList.remove('hidden');
+      if (res.ok) {
+        box.className = 'mt-4 p-3 rounded-xl bg-hope-100 text-hope-700 font-bold';
+        box.textContent = '✅ تم نشر النداء بنجاح! سيظهر في القائمة فورًا — احتفظ بالهاتف متاحًا.';
+        form.reset();
+        loadList();
+        setTimeout(closeModal, 1600);
+      } else {
+        box.className = 'mt-4 p-3 rounded-xl bg-blood-100 text-blood-700 font-bold';
+        box.textContent = '❌ ' + (json.error || 'حدث خطأ — تحقق من الحقول وأعد المحاولة.');
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } catch (err) {
+      alertBox('تعذر الاتصال بالخادم — تحقق من الشبكة.');
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
     }
   });
 

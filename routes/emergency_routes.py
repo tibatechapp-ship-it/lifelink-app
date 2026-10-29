@@ -92,8 +92,14 @@ def get_emergency(req_id):
 
 
 @emergency_bp.route("", methods=["POST"])
-@jwt_required
 def create_emergency():
+    """Create a blood request.
+
+    UX decision (see docs UX audit L-1): requesting blood is an emergency —
+    the endpoint is public and rate-limited (10 POST/min per IP via middleware),
+    so a requester never hits an auth wall. Abuse is bounded by validation +
+    rate limiting instead of authentication.
+    """
     data = request.get_json(silent=True) or {}
     required = ["patient_name", "blood_type", "hospital", "city", "contact_phone"]
     missing = [f for f in required if f not in data or data.get(f) in (None, "")]
@@ -180,6 +186,6 @@ def open_emergencies():
     )
     reqs = (EmergencyRequest.query
             .filter_by(status="open")
-            .order_by(urgency_order, EmergencyRequest.created_at.asc())
+            .order_by(urgency_order, EmergencyRequest.created_at.desc())
             .limit(500).all())
     return jsonify({"count": len(reqs), "requests": [{"id": r.id, "blood_type": r.blood_type, "city": r.city, "urgency": r.urgency} for r in reqs]})

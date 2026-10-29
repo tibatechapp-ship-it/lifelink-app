@@ -91,8 +91,13 @@ def get_donor(donor_id):
 
 
 @donor_bp.route("", methods=["POST"])
-@jwt_required
 def create_donor():
+    """Register a donor.
+
+    UX decision (see docs UX audit L-1): donor self-registration happens from the
+    public /register page, so this endpoint is public + rate-limited. Accounts
+    with elevated roles are still created only via /api/auth/register + login.
+    """
     data = request.get_json(silent=True) or {}
     required = ["name", "email", "phone", "blood_type", "city", "age", "weight"]
     missing = [f for f in required if f not in data or data.get(f) in (None, "")]
@@ -174,7 +179,9 @@ def delete_donor(donor_id):
 
 
 @donor_bp.route("/search", methods=["GET"])
-@jwt_required()
+# UX audit: كان upstream يستخدم @jwt_required() بأقواس بينما المُزيّن
+# بسيط (يأخذ fn مباشرة) — TypeError عند الاستيراد كان يمنع إقلاع التطبيق كلّه.
+@jwt_required
 def search_donors():
     """Search donors by blood type and city (for matching emergency requests)."""
     blood_type = request.args.get("blood_type", "").upper().strip()
