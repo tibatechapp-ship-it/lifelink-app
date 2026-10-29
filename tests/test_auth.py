@@ -163,3 +163,48 @@ def test_role_escalation_blocked(client):
     r = _register(client, role="admin")
     assert r.status_code == 201
     assert r.get_json()["donor"]["role"] == "donor"
+
+
+def test_list_endpoints_never_leak_pii(client):
+    """UX audit + security-p0: القوائم العامة تُسقط بيانات الهوية الشخصية.
+
+    عقد الخصوصية: بطاقات القوائم تحمل (id, blood_type, city, urgency)
+    للنداءات و(id, blood_type, city) للمتبرعين فقط — أي تسريب لـ
+    patient_name/hospital/contact_phone/notes يُعتبر تراجعاً أمنياً.
+    """
+    _register(client)
+    login = client.post("/api/auth/login", json={"email": "a@b.com", "password": "secret123"})
+    token = login.get_json()["access_token"]
+    client.post("/api/emergencies", headers={"Authorization": f"Bearer {token}"}, json={
+        "patient_name": "Private Patient", "blood_type": "O+", "hospital": "Secret Hosp",
+        "city": "Aden", "contact_phone": "+967777777777", "notes": "confidential",
+    })
+    for url in ("/api/emergencies", "/api/emergencies/open"):
+        r = client.get(url)
+        assert r.status_code == 200
+        for req in r.get_json()["requests"]:
+            assert set(req.keys()) <= {"id", "blood_type", "city", "urgency"}, req
+            assert "Private Patient" not in str(req)
+    # قائمة المتبرعين (محمية بمصادقة upstream): بلا أسماء/هواتف/بريد حتى للموثوقين
+    r = client.get("/api/donors", headers={"Authorization": f"Bearer {token}"})
+    assert r.status_code == 200
+    for d in r.get_json()["donors"]:
+        assert set(d.keys()) <= {"id", "blood_type", "city"}, d
+
+
+def test_emergency_detail_requires_trusted_account(client):
+    """التفاصيل الكاملة (PII مُفكّ التشفير) خلف المصادقة — الزائر يرى 401
+    والواجهة تعرض إرشاداً واعياً بدل بيانات فارغة."""
+    _register(client)
+    login = client.post("/api/auth/login", json={"email": "a@b.com", "password": "secret123"})
+    token = login.get_json()["access_token"]
+    r = client.post("/api/emergencies", headers={"Authorization": f"Bearer {token}"}, json={
+        "patient_name": "X", "blood_type": "O+", "hospital": "H", "city": "C", "contact_phone": "+967700000000",
+    })
+    eid = r.get_json()["id"]
+    # الزائر بلا توكن: تفاصيل النداء محمية
+    assert client.get(f"/api/emergencies/{eid}").status_code == 401
+    # حساب موثوق: يرى التفاصيل كاملة
+    r2 = client.get(f"/api/emergencies/{eid}", headers={"Authorization": f"Bearer {token}"})
+    assert r2.status_code == 200
+    assert r2.get_json()["patient_name"] == "X"
