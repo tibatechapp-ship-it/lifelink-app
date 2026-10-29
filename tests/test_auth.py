@@ -82,9 +82,11 @@ def test_login_unknown_email(client):
     assert r.status_code == 401
 
 
-def test_protected_route_no_token(client):
+def test_donor_registration_is_public(client):
+    # UX audit L-1: self-registration happens from the public /register page.
+    # Incomplete payload is rejected by validation (400), not by auth (401).
     r = client.post("/api/donors", json={"name": "x"})
-    assert r.status_code == 401
+    assert r.status_code == 400
 
 
 def test_protected_route_with_token(client):
@@ -138,11 +140,12 @@ def test_tampered_token_rejected(client):
     assert r.status_code == 401
 
 
-def test_emergency_create_requires_auth(client):
+def test_emergency_create_is_public(client):
+    # UX audit L-1: requesting blood is an emergency — guests must be able to post.
     r = client.post("/api/emergencies", json={
         "patient_name": "X", "blood_type": "O+", "hospital": "H", "city": "C", "contact_phone": "+967700000000",
     })
-    assert r.status_code == 401
+    assert r.status_code == 201
 
 
 def test_emergency_create_with_token(client):
