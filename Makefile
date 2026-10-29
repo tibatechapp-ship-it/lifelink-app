@@ -20,8 +20,12 @@ help:
 install:
 	$(PY) -m pip install -r requirements.txt -r requirements-dev.txt
 
+# Hermetic: an ambient DATABASE_URL (platform shells export one) must not
+# decide where the suite writes. Blank = unset by the app's own contract
+# (models/database.py treats blank as unset -> sqlite), and every test pins
+# its own URL via monkeypatch when it needs one.
 test:
-	$(PY) -m pytest tests/ -q
+	DATABASE_URL= $(PY) -m pytest tests/ -q
 
 lint:
 	$(PY) -m ruff check .

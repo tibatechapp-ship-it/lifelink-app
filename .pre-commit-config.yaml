@@ -35,8 +35,10 @@ repos:
         pass_filenames: true
 
       # Full test suite (sqlite, no services needed — seconds, not minutes).
+      # `env DATABASE_URL=` keeps the run hermetic: an ambient platform URL
+      # must not decide where the suite writes (same guard as `make test`).
       - id: pytest
         name: pytest
-        entry: python3 -m pytest tests/ -q
+        entry: env DATABASE_URL= python3 -m pytest tests/ -q
         language: system
         pass_filenames: false

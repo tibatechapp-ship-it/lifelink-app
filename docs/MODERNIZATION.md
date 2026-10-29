@@ -51,6 +51,13 @@ Import scan across the repo: **nothing to remove.**
 | `.editorconfig` | Repo-wide format contract (4-space Python, 2-space YAML/TOML/JS, tabs for Makefile) |
 | `.pre-commit-config.yaml` | ruff on staged files **+ full pytest on every commit** (safe here: the suite runs in ~4 s, unlike nexus-core's two-minute suite) |
 
+**Second pass:** `make test` and the pytest pre-commit hook are now
+**hermetic** — both run with `DATABASE_URL=` (blank, which the app's own
+contract treats as unset → sqlite). A platform shell that exports an ambient
+`DATABASE_URL` (exactly what happened during verification) can no longer
+divert the suite's writes or crash collection; every test that needs a
+specific URL still pins it via `monkeypatch`.
+
 ## 4. Performance — database indexes
 
 **Verified end-to-end (models → migration → queries):** the B-tree indexes the
@@ -77,21 +84,27 @@ can serve** (the planner sequential-scans; the composite indexes only help the
 
 ## 5. Verification
 
-* `pytest tests/` — **68/68 passed** (pristine tree: collection crash).
-* `ruff check .` — all checks passed (CI lint gate).
+* `make test` — **68/68 passed**, including with a polluted ambient
+  `DATABASE_URL` (the hermetic guard now covers that case).
+* `make lint` (`ruff check .`) — all checks passed (CI lint gate).
 * `alembic` up/down/up cycle — clean.
-* No test was modified; the only code change is the one-line decorator fix.
+* `pip-audit` on `requirements.txt` and `requirements-dev.txt` — no known
+  vulnerabilities.
+* No test was modified; the only code changes are the one-line decorator fix
+  (first pass) and the hermetic `make test` / pre-commit guard (second pass).
 
 ## 6. يحتاج قرار (needs decision)
 
 * **Module-level `app = create_app()`** (`app.py`): the app object is built at
   import time, so an invalid `DATABASE_URL` in the environment crashes
-  *collection* of any test module that imports `app` — this bit during
-  verification (a sandbox stray `DATABASE_URL=file:…` produced URL parse
-  errors that look like test failures). Moving construction into the
+  *collection* of any test module that imports `app`. The practical impact is
+  now contained — `make test` and the pytest hook run hermetically — but the
+  underlying coupling remains: moving construction into the
   `if __name__ == "__main__"` block (or a lazy factory pattern) would decouple
-  import from environment validity — deferred as it touches the WSGI contract
-  (gunicorn points at `app:app`).
+  import from environment validity. Deferred as it touches the WSGI contract
+  (gunicorn points at `app:app`). Note the fail-fast behavior itself is
+  correct: silently falling back to sqlite when an operator named a real
+  database would misroute data.
 * **City search semantics**: the trigram index makes the current
   substring search fast. If you'd rather have exact/prefix matching (faster
   still, and uses the existing B-tree), that is a product behavior change and
