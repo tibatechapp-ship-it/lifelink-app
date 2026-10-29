@@ -174,7 +174,7 @@ def delete_donor(donor_id):
 
 
 @donor_bp.route("/search", methods=["GET"])
-@jwt_required()
+@jwt_required
 def search_donors():
     """Search donors by blood type and city (for matching emergency requests)."""
     blood_type = request.args.get("blood_type", "").upper().strip()
