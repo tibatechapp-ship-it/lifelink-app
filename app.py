@@ -62,6 +62,16 @@ def create_app():
     def emergencies_page():
         return render_template("emergencies.html")
 
+    # ---- Public stats (UX audit L-1: footer/hero counters were dead because
+    # they fetched auth-gated endpoints and swallowed 401s forever) ----
+    @app.route("/api/stats")
+    def stats():
+        from models.models import Donor, EmergencyRequest
+        return jsonify({
+            "donors": Donor.query.count(),
+            "open_emergencies": EmergencyRequest.query.filter_by(status="open").count(),
+        })
+
     # Liveness: the process answers, with or without a database. A healthcheck
     # that needs Postgres turns a database outage into a restart loop.
     @app.route("/health")

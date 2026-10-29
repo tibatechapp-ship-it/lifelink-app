@@ -13,22 +13,22 @@
     <form id="donorForm" class="space-y-5">
       <div class="grid sm:grid-cols-2 gap-5">
         <div>
-          <label class="block text-sm font-bold mb-1">الاسم الكامل *</label>
-          <input name="name" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="أحمد محمد">
+          <label for="donor-name" class="block text-sm font-bold mb-1">الاسم الكامل *</label>
+          <input id="donor-name" name="name" required autocomplete="name" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="أحمد محمد">
         </div>
         <div>
-          <label class="block text-sm font-bold mb-1">البريد الإلكتروني *</label>
-          <input name="email" type="email" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="ahmed@example.com">
+          <label for="donor-email" class="block text-sm font-bold mb-1">البريد الإلكتروني *</label>
+          <input id="donor-email" name="email" type="email" required autocomplete="email" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="ahmed@example.com">
         </div>
       </div>
       <div class="grid sm:grid-cols-2 gap-5">
         <div>
-          <label class="block text-sm font-bold mb-1">رقم الهاتف *</label>
-          <input name="phone" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="+964 7XX XXX XXXX">
+          <label for="donor-phone" class="block text-sm font-bold mb-1">رقم الهاتف *</label>
+          <input id="donor-phone" name="phone" type="tel" inputmode="tel" required autocomplete="tel" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="+964 7XX XXX XXXX">
         </div>
         <div>
-          <label class="block text-sm font-bold mb-1">فصيلة الدم *</label>
-          <select name="blood_type" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition">
+          <label for="donor-blood" class="block text-sm font-bold mb-1">فصيلة الدم *</label>
+          <select id="donor-blood" name="blood_type" required autocomplete="off" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition">
             <option value="">اختر فصيلة الدم</option>
             <option>A+</option><option>A-</option><option>B+</option><option>B-</option>
             <option>AB+</option><option>AB-</option><option>O+</option><option>O-</option>
@@ -37,28 +37,29 @@
       </div>
       <div class="grid sm:grid-cols-3 gap-5">
         <div>
-          <label class="block text-sm font-bold mb-1">المدينة *</label>
-          <input name="city" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="بغداد">
+          <label for="donor-city" class="block text-sm font-bold mb-1">المدينة *</label>
+          <input id="donor-city" name="city" required autocomplete="address-level2" class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="بغداد">
         </div>
         <div>
-          <label class="block text-sm font-bold mb-1">العمر *</label>
-          <input name="age" type="number" min="18" max="65" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="25">
+          <label for="donor-age" class="block text-sm font-bold mb-1">العمر *</label>
+          <input id="donor-age" name="age" type="number" min="18" max="65" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="25">
         </div>
         <div>
-          <label class="block text-sm font-bold mb-1">الوزن (كغ) *</label>
-          <input name="weight" type="number" min="50" step="0.1" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="70">
+          <label for="donor-weight" class="block text-sm font-bold mb-1">الوزن (كغ) *</label>
+          <input id="donor-weight" name="weight" type="number" min="45" max="250" step="0.1" required class="w-full px-4 py-3 rounded-xl border border-gray-200 focus:border-blood-500 focus:ring-2 focus:ring-blood-200 outline-none transition" placeholder="70">
+          <p class="text-xs text-gray-500 mt-1">الحد الأدنى للتبرع 45 كغ</p>
         </div>
       </div>
       <div class="flex items-center gap-2">
         <input type="checkbox" name="available" id="available" checked class="w-5 h-5 accent-blood-600">
         <label for="available" class="text-sm">أنا متاح للتبرع حالياً</label>
       </div>
-      <button type="submit" class="w-full py-4 rounded-xl bg-blood-600 text-white font-bold text-lg shadow-lg shadow-red-200 hover:bg-blood-700 transition transform hover:scale-[1.02]">
+      <button type="submit" id="donorSubmit" class="btn btn-primary w-full text-lg rounded-xl">
         🤝 سجّل الآن
       </button>
     </form>
 
-    <div id="result" class="mt-6 hidden"></div>
+    <div id="result" class="mt-6 hidden" role="alert" aria-live="assertive"></div>
   </div>
 </section>
 {% endblock %}
@@ -68,25 +69,41 @@
   document.getElementById('donorForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const form = e.target;
+    const btn = document.getElementById('donorSubmit');
     const data = Object.fromEntries(new FormData(form));
     data.age = parseInt(data.age);
     data.weight = parseFloat(data.weight);
     data.available = form.available.checked;
-    const res = await fetch('/api/donors', {
-      method: 'POST',
-      headers: {'Content-Type':'application/json'},
-      body: JSON.stringify(data)
-    });
-    const json = await res.json();
-    const box = document.getElementById('result');
-    box.classList.remove('hidden');
-    if (res.ok) {
-      box.className = 'mt-6 p-4 rounded-xl bg-hope-100 text-hope-600 font-bold';
-      box.innerHTML = '✅ تم التسجيل بنجاح! معرفك: ' + json.id + ' — فصيلة دمك: ' + json.blood_type;
-      form.reset();
-    } else {
+    btn.disabled = true;
+    const original = btn.innerHTML;
+    btn.textContent = 'جارٍ التسجيل...';
+    try {
+      const res = await fetch('/api/donors', {
+        method: 'POST',
+        headers: {'Content-Type':'application/json'},
+        body: JSON.stringify(data)
+      });
+      const json = await res.json().catch(()=>({}));
+      const box = document.getElementById('result');
+      box.classList.remove('hidden');
+      if (res.ok) {
+        box.className = 'mt-6 p-4 rounded-xl bg-hope-100 text-hope-700 font-bold';
+        box.textContent = '✅ تم التسجيل بنجاح! معرفك: ' + json.id + ' — فصيلة دمك: ' + json.blood_type;
+        form.reset();
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } else {
+        box.className = 'mt-6 p-4 rounded-xl bg-blood-100 text-blood-700 font-bold';
+        box.textContent = '❌ ' + (json.error || 'حدث خطأ — تحقق من الحقول وأعد المحاولة');
+        box.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    } catch (err) {
+      const box = document.getElementById('result');
+      box.classList.remove('hidden');
       box.className = 'mt-6 p-4 rounded-xl bg-blood-100 text-blood-700 font-bold';
-      box.innerHTML = '❌ ' + (json.error || 'حدث خطأ');
+      box.textContent = '❌ تعذر الاتصال بالخادم — تحقق من الشبكة وأعد المحاولة.';
+    } finally {
+      btn.disabled = false;
+      btn.innerHTML = original;
     }
   });
 </script>

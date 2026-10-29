@@ -13,16 +13,16 @@
       <span class="text-7xl sm:text-8xl">🩸</span>
     </div>
     <h1 class="text-4xl sm:text-6xl lg:text-7xl font-black mb-4 leading-tight float-up">
-      كل قطرة دم<br><span class="text-red-200">قد تنقذ روحاً</span>
+      كل قطرة دم<br><span class="text-red-100">قد تنقذ روحاً</span>
     </h1>
-    <p class="text-lg sm:text-2xl text-red-100 max-w-2xl mx-auto mb-8 float-up" style="animation-delay:.15s">
+    <p class="text-lg sm:text-2xl text-red-50 max-w-2xl mx-auto mb-8 float-up" style="animation-delay:.15s">
       LifeLink — شبكة إنقاذ وتبرع بالدم. سجّل كمتبرع، أو أرسل نداء استغاثة، وسنجد لك المتبرعين الأقرب فوراً.
     </p>
     <div class="flex flex-col sm:flex-row gap-4 justify-center float-up" style="animation-delay:.3s">
-      <a href="/register" class="px-8 py-4 rounded-full bg-white text-blood-700 font-bold text-lg shadow-2xl hover:scale-105 transition-transform">
+      <a href="/register" class="btn rounded-full bg-white text-blood-700 font-bold text-lg shadow-2xl hover:scale-105 transition-transform" aria-label="الانتقال إلى صفحة تسجيل المتبرعين">
         🤝 سجّل كمتبرع
       </a>
-      <a href="/emergencies" class="px-8 py-4 rounded-full border-2 border-white text-white font-bold text-lg hover:bg-white/10 transition">
+      <a href="/emergencies" class="btn rounded-full border-2 border-white text-white font-bold text-lg hover:bg-white/10 transition" aria-label="عرض حالات الدم العاجلة">
         🚨 حالات عاجلة
       </a>
     </div>
@@ -54,7 +54,7 @@
     <div class="bg-white rounded-2xl p-8 shadow-lg card-hover text-center">
       <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-blood-100 flex items-center justify-center text-3xl">📝</div>
       <h3 class="text-xl font-bold mb-2">1. سجّل</h3>
-      <p class="text-gray-600">أدخل فصيلة دمك، مدينتك، وبياناتك. takes less than a minute.</p>
+      <p class="text-gray-600">أدخل فصيلة دمك، مدينتك، وبياناتك — يستغرق أقل من دقيقة واحدة.</p>
     </div>
     <div class="bg-white rounded-2xl p-8 shadow-lg card-hover text-center">
       <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-blood-100 flex items-center justify-center text-3xl">🚨</div>
@@ -88,12 +88,9 @@
 <script>
   async function loadStats() {
     try {
-      const d = await fetch('/api/donors').then(r=>r.json());
-      document.getElementById('sDonors').textContent = d.count;
-    } catch(e){}
-    try {
-      const e = await fetch('/api/emergencies/open').then(r=>r.json());
-      document.getElementById('sOpen').textContent = e.count;
+      const s = await fetch('/api/stats').then(r=>r.json());
+      document.getElementById('sDonors').textContent = s.donors;
+      document.getElementById('sOpen').textContent = s.open_emergencies;
     } catch(e){}
   }
   async function loadPreview() {
@@ -105,14 +102,14 @@
         <div class="bg-white rounded-xl p-5 shadow card-hover border-l-4 ${r.urgency==='critical'?'border-blood-700':r.urgency==='urgent'?'border-blood-500':'border-hope-500'}">
           <div class="flex justify-between items-start mb-2">
             <span class="font-bold text-lg">${r.blood_type}</span>
-            <span class="text-xs px-2 py-1 rounded-full ${r.urgency==='critical'?'bg-blood-100 text-blood-700':r.urgency==='urgent'?'bg-blood-50 text-blood-600':'bg-hope-100 text-hope-600'}">${r.urgency}</span>
+            <span class="text-xs px-2 py-1 rounded-full font-bold ${r.urgency==='critical'?'bg-blood-100 text-blood-700':r.urgency==='urgent'?'bg-blood-50 text-blood-600':'bg-hope-100 text-hope-700'}">${(window.LL_URGENCY||{})[r.urgency] || r.urgency}</span>
           </div>
-          <div class="text-gray-700 font-medium">${esc(r.patient_name)}</div>
-          <div class="text-sm text-gray-500 mt-1">🏥 ${esc(r.hospital)} — ${esc(r.city)}</div>
-          <div class="text-sm text-gray-500">📞 ${esc(r.contact_phone)} · ${r.units_needed} وحدة</div>
+          <div class="text-sm text-gray-500 mt-1">📍 ${esc(r.city)}</div>
+          <!-- privacy: القوائم العامة بلا بيانات شخصية (تدفق أمني security-p0) — التفاصيل في صفحة الطوارئ -->
+          <a href="/emergencies" class="inline-block mt-2 text-sm font-bold text-hope-700 hover:text-hope-800 underline decoration-dotted">التفاصيل وطرق الاستجابة ←</a>
         </div>
       `).join('');
-    } catch(e){ document.getElementById('previewList').innerHTML = '<div class="text-red-500">تعذر التحميل</div>'; }
+    } catch(e){ document.getElementById('previewList').innerHTML = '<div class="text-red-700">تعذر التحميل — تحقق من الاتصال.</div>'; }
   }
   loadStats(); loadPreview();
 </script>

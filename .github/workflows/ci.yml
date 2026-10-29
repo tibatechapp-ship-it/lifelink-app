@@ -28,7 +28,7 @@ jobs:
       - name: Secrets
         uses: gitleaks/gitleaks-action@v2
         env:
-  FIELD_ENCRYPTION_KEY: "dummy_key_for_ci_only_123456789012="
+          FIELD_ENCRYPTION_KEY: "dummy_key_for_ci_only_123456789012="
           # Required since the action's breaking update: PR scans need the
           # workflow token, otherwise the step fails before scanning anything.
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -132,6 +132,7 @@ jobs:
         run: |
           docker run -d --name lifelink --network host \
             -e SECRET_KEY=ci-secret \
+            -e FIELD_ENCRYPTION_KEY=dummy_key_for_ci_only_123456789012= \
             -e FLASK_ENV=production \
             -e DATABASE_URL=postgres://lifelink:lifelink@127.0.0.1:5432/lifelink \
             lifelink:ci
