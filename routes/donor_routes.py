@@ -1,4 +1,3 @@
-from flask_jwt_extended import jwt_required
 """Donor registration, search, and management routes."""
 
 import re
