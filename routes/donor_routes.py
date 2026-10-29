@@ -1,3 +1,4 @@
+from flask_jwt_extended import jwt_required
 """Donor registration, search, and management routes."""
 
 import re
@@ -80,7 +81,7 @@ def list_donors():
     if available is not None:
         q = q.filter(Donor.available == (str(available).lower() == "true"))
     donors = q.order_by(Donor.created_at.desc()).limit(500).all()
-    return jsonify({"count": len(donors), "donors": [d.to_dict() for d in donors]})
+    return jsonify({"count": len(donors), "donors": [{"id": d.id, "blood_type": d.blood_type, "city": d.city} for d in donors]})
 
 
 @donor_bp.route("/<int:donor_id>", methods=["GET"])
@@ -174,6 +175,7 @@ def delete_donor(donor_id):
 
 
 @donor_bp.route("/search", methods=["GET"])
+@jwt_required()
 def search_donors():
     """Search donors by blood type and city (for matching emergency requests)."""
     blood_type = request.args.get("blood_type", "").upper().strip()
@@ -184,4 +186,4 @@ def search_donors():
     if city:
         q = q.filter(Donor.city.ilike(f"%{city[:80]}%"))
     donors = q.limit(200).all()
-    return jsonify({"count": len(donors), "donors": [d.to_dict() for d in donors]})
+    return jsonify({"count": len(donors), "donors": [{"id": d.id, "blood_type": d.blood_type, "city": d.city} for d in donors]})

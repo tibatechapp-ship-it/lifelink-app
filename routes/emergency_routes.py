@@ -81,7 +81,7 @@ def list_emergencies():
         if u in VALID_URGENCY:
             q = q.filter(EmergencyRequest.urgency == u)
     reqs = q.order_by(EmergencyRequest.created_at.desc()).limit(500).all()
-    return jsonify({"count": len(reqs), "requests": [r.to_dict() for r in reqs]})
+    return jsonify({"count": len(reqs), "requests": [{"id": r.id, "blood_type": r.blood_type, "city": r.city, "urgency": r.urgency} for r in reqs]})
 
 
 @emergency_bp.route("/<int:req_id>", methods=["GET"])
@@ -182,4 +182,4 @@ def open_emergencies():
             .filter_by(status="open")
             .order_by(urgency_order, EmergencyRequest.created_at.asc())
             .limit(500).all())
-    return jsonify({"count": len(reqs), "requests": [r.to_dict() for r in reqs]})
+    return jsonify({"count": len(reqs), "requests": [{"id": r.id, "blood_type": r.blood_type, "city": r.city, "urgency": r.urgency} for r in reqs]})
