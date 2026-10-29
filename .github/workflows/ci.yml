@@ -24,6 +24,10 @@ jobs:
         run: pytest -q
       - name: Secrets
         uses: gitleaks/gitleaks-action@v2
+        env:
+          # Required since the action's breaking update: PR scans need the
+          # workflow token, otherwise the step fails before scanning anything.
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   # The migration is the production schema — SQLite autogenerate can hide
   # dialect problems, so it is applied to a REAL Postgres here: upgrade twice
