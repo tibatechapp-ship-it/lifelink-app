@@ -179,7 +179,9 @@ def delete_donor(donor_id):
 
 
 @donor_bp.route("/search", methods=["GET"])
-@jwt_required()
+# UX audit: كان upstream يستخدم @jwt_required() بأقواس بينما المُزيّن
+# بسيط (يأخذ fn مباشرة) — TypeError عند الاستيراد كان يمنع إقلاع التطبيق كلّه.
+@jwt_required
 def search_donors():
     """Search donors by blood type and city (for matching emergency requests)."""
     blood_type = request.args.get("blood_type", "").upper().strip()
