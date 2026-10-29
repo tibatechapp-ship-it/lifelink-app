@@ -1,3 +1,9 @@
+
+import os
+
+if os.environ.get("FLASK_ENV") == "production" and not os.environ.get("FIELD_ENCRYPTION_KEY"):
+    raise RuntimeError("CRITICAL: FIELD_ENCRYPTION_KEY is required in production! Refusing to start.")
+
 """Field-level PII encryption helpers (Fernet, key from env)."""
 
 import base64
