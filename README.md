@@ -8,6 +8,13 @@
 
 LifeLink هي منصة ويب مفتوحة المصدر (Open Source) تربط **المتبرعين بالدم** مع **المستشفيات والمرضى** الذين يحتاجون إلى دم عاجل. تهدف إلى تقليل الوقت بين "الحاجة" و"الإنقاذ" إلى أدنى حد.
 
+## ما هو LifeLink؟ ولمن؟
+
+- **المشكلة**: نداء الدم العاجل يصل للمتبرع المناسب عبر اتصالات يدوية تستغرق ساعات — بينما العمر الفعلي للنداء دقائق.
+- **لمن**: المستشفيات وبنوك الدم والمنظمات الإسعافية (المشغّل) + المتبرعين والمتطوعين (المستخدم).
+- **ما هو الآن**: تطبيق Flask كامل — **70 اختباراً**، ترحيلات Alembic idempotent تُفحص على **Postgres حقيقي** في CI، حزمة Docker، وواجهة **PII-minimal**: أقل بيانات هوية ممكنة، ونداءات طوارئ تعمل للزائر دون تسجيل.
+- **الفجوة نحو المنتج التشغيلي**: مطابقة متبرعين جغرافية (قرب + فصيلة)، وثائق ثقة/خصوصية للمشغّل المؤسسي، ولوحة تحكم للمستشفى.
+
 <p align="center">
   <a href="https://github.com/tibatechapp-ship-it/lifelink-app/actions/workflows/ci.yml"><img src="https://github.com/tibatechapp-ship-it/lifelink-app/actions/workflows/ci.yml/badge.svg" alt="CI"></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
