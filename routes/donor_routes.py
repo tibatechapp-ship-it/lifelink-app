@@ -59,6 +59,18 @@ def _validate_donor(data, partial=False):
     if "available" in data and not isinstance(data["available"], bool) and str(data["available"]).lower() not in ("true", "false", "1", "0"):
         # accept truthy strings from forms
         errors.append("available must be boolean")
+    if "latitude" in data and data["latitude"] is not None:
+        try:
+            if not (-90.0 <= float(data["latitude"]) <= 90.0):
+                errors.append("latitude must be between -90 and 90")
+        except (TypeError, ValueError):
+            errors.append("latitude must be a number")
+    if "longitude" in data and data["longitude"] is not None:
+        try:
+            if not (-180.0 <= float(data["longitude"]) <= 180.0):
+                errors.append("longitude must be between -180 and 180")
+        except (TypeError, ValueError):
+            errors.append("longitude must be a number")
     return errors
 
 
@@ -118,6 +130,8 @@ def create_donor():
             age=int(data["age"]),
             weight=float(data["weight"]),
             available=_to_bool(data.get("available", True)),
+            latitude=_to_coord(data.get("latitude"), -90.0, 90.0),
+            longitude=_to_coord(data.get("longitude"), -180.0, 180.0),
         )
         db.session.add(donor)
         db.session.commit()
@@ -131,6 +145,16 @@ def _to_bool(v):
     if isinstance(v, bool):
         return v
     return str(v).lower() in ("true", "1", "yes", "on")
+
+
+def _to_coord(v, lo, hi):
+    """float أو None — المدى يُرفض في التحقق، هنا فقط التحويل الآمن."""
+    if v is None or v == "":
+        return None
+    f = float(v)
+    if not (lo <= f <= hi):
+        raise ValueError(f"coordinate out of range ({lo}..{hi})")
+    return f
 
 
 @donor_bp.route("/<int:donor_id>", methods=["PUT"])
@@ -154,6 +178,8 @@ def update_donor(donor_id):
         "age": lambda v: int(v),
         "weight": lambda v: float(v),
         "available": _to_bool,
+        "latitude": lambda v: _to_coord(v, -90.0, 90.0),
+        "longitude": lambda v: _to_coord(v, -180.0, 180.0),
     }
     for field, transform in field_map.items():
         if field in data:

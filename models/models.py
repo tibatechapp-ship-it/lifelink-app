@@ -38,6 +38,9 @@ class Donor(db.Model):
     role = db.Column(db.String(20), default="donor", nullable=False, index=True)  # donor/center/hospital/admin
     last_donation = db.Column(db.DateTime, nullable=True)
     available = db.Column(db.Boolean, default=True, nullable=False)
+    # مطابقة جغرافية اختيارية — بدونها تعمل المطابقة بالمدينة (خارطة المنتَجة أسبوع 1)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     def set_password(self, password):
@@ -82,6 +85,9 @@ class EmergencyRequest(db.Model):
     urgency = db.Column(db.String(20), default="urgent", nullable=False, index=True)  # critical/urgent/normal
     status = db.Column(db.String(20), default="open", nullable=False, index=True)  # open/fulfilled/closed
     notes = db.Column(db.Text, nullable=True)
+    # مطابقة جغرافية اختيارية — موقع المستشفى/النداء (خارطة المنتَجة أسبوع 1)
+    latitude = db.Column(db.Float, nullable=True)
+    longitude = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC), nullable=False)
 
     def to_dict(self):

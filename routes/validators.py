@@ -17,6 +17,9 @@ class DonorIn(BaseModel):
     age: int = Field(..., ge=18, le=65)
     weight: float = Field(..., ge=45, le=250)
     available: bool | None = True
+    # مطابقة جغرافية اختيارية — بلا قيم تعمل المطابقة بالمدينة
+    latitude: float | None = Field(default=None, ge=-90.0, le=90.0)
+    longitude: float | None = Field(default=None, ge=-180.0, le=180.0)
 
     @field_validator("blood_type")
     @classmethod
@@ -45,6 +48,9 @@ class EmergencyIn(BaseModel):
     urgency: str = Field(default="urgent")
     status: str | None = None
     notes: str | None = Field(default=None, max_length=2000)
+    # مطابقة جغرافية اختيارية — موقع المستشفى/النداء
+    latitude: float | None = Field(default=None, ge=-90.0, le=90.0)
+    longitude: float | None = Field(default=None, ge=-180.0, le=180.0)
 
     @field_validator("blood_type")
     @classmethod

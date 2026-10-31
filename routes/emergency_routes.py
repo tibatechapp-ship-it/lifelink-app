@@ -20,6 +20,16 @@ def _err(msg, code=400):
     return jsonify({"error": msg}), code
 
 
+def _to_coord(v, lo, hi):
+    """float أو None — المدى يُرفض في التحقق، هنا فقط التحويل الآمن."""
+    if v is None or v == "":
+        return None
+    f = float(v)
+    if not (lo <= f <= hi):
+        raise ValueError(f"coordinate out of range ({lo}..{hi})")
+    return f
+
+
 def _validate_emergency(data, partial=False):
     errors = []
     if not partial or "patient_name" in data:
@@ -56,6 +66,18 @@ def _validate_emergency(data, partial=False):
         errors.append("invalid status")
     if "notes" in data and data["notes"] is not None and (not isinstance(data["notes"], str) or len(data["notes"]) > 2000):
         errors.append("notes must be <=2000 chars")
+    if "latitude" in data and data["latitude"] is not None:
+        try:
+            if not (-90.0 <= float(data["latitude"]) <= 90.0):
+                errors.append("latitude must be between -90 and 90")
+        except (TypeError, ValueError):
+            errors.append("latitude must be a number")
+    if "longitude" in data and data["longitude"] is not None:
+        try:
+            if not (-180.0 <= float(data["longitude"]) <= 180.0):
+                errors.append("longitude must be between -180 and 180")
+        except (TypeError, ValueError):
+            errors.append("longitude must be a number")
     return errors
 
 
@@ -118,6 +140,8 @@ def create_emergency():
             contact_phone=encrypt_field(str(data["contact_phone"]).strip()),
             urgency=str(data.get("urgency", "urgent")).strip().lower(),
             notes=(str(data["notes"]).strip() if data.get("notes") is not None else None),
+            latitude=_to_coord(data.get("latitude"), -90.0, 90.0),
+            longitude=_to_coord(data.get("longitude"), -180.0, 180.0),
         )
         db.session.add(req)
         db.session.commit()
@@ -150,6 +174,8 @@ def update_emergency(req_id):
         "urgency": lambda v: str(v).strip().lower(),
         "status": lambda v: str(v).strip().lower(),
         "notes": lambda v: (str(v).strip() if v is not None else None),
+        "latitude": lambda v: _to_coord(v, -90.0, 90.0),
+        "longitude": lambda v: _to_coord(v, -180.0, 180.0),
     }
     for field, transform in field_map.items():
         if field in data:
@@ -172,6 +198,31 @@ def delete_emergency(req_id):
     db.session.delete(req)
     db.session.commit()
     return jsonify({"deleted": req_id}), 200
+
+
+@emergency_bp.route("/<int:req_id>/matches", methods=["GET"])
+def emergency_matches(req_id):
+    """أقرب المتبرعين المتوافقين — قراءة-فقت بلا أي بيانات اتصال (PII-minimal).
+
+    أعلى مطابقة = فصيلة متوافقة × الأقرب × آخر تبرع سليم (56 يوماً).
+    النداء بلا إحداثيات: fallback بالمدينة (distance_km=None).
+    """
+    from services.matching import DEFAULT_MAX_KM, find_matching_donors
+
+    req = EmergencyRequest.query.get(req_id)
+    if req is None:
+        return _err("not found", 404)
+    raw = request.args.get("max_km")
+    max_km = DEFAULT_MAX_KM
+    if raw is not None:
+        try:
+            max_km = float(raw)
+        except (TypeError, ValueError):
+            return _err("max_km must be a number")
+        if max_km <= 0:
+            return _err("max_km must be positive")
+    matches = find_matching_donors(req, max_km=max_km)
+    return jsonify({"id": req_id, "count": len(matches), "matches": matches})
 
 
 @emergency_bp.route("/open", methods=["GET"])
