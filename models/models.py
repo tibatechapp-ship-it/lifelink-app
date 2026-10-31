@@ -89,6 +89,9 @@ class EmergencyRequest(db.Model):
     latitude = db.Column(db.Float, nullable=True)
     longitude = db.Column(db.Float, nullable=True)
     created_at = db.Column(db.DateTime, default=lambda: datetime.now(UTC), nullable=False)
+    # لحظة التلبية — تُضبط مرة واحدة عند انتقال status إلى fulfilled
+    # (تُمكّن زمن استجابة متوسط صادق في /admin/stats؛ ترحيل d8e9f0a1b2c3)
+    fulfilled_at = db.Column(db.DateTime, nullable=True)
 
     def to_dict(self):
         return {
@@ -103,4 +106,5 @@ class EmergencyRequest(db.Model):
             "status": self.status,
             "notes": self.notes,
             "created_at": self.created_at.isoformat(),
+            "fulfilled_at": self.fulfilled_at.isoformat() if self.fulfilled_at else None,
         }

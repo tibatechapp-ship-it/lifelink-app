@@ -1,6 +1,7 @@
 """Emergency blood request routes."""
 
 import re
+from datetime import UTC, datetime
 
 from flask import Blueprint, jsonify, request
 
@@ -184,6 +185,10 @@ def update_emergency(req_id):
             except (ValueError, TypeError) as e:
                 db.session.rollback()
                 return _err(f"Invalid {field}: {e}")
+    # ختم لحظة التلبية مرة واحدة: أول انتقال إلى fulfilled فقط
+    # (لا يُمسّ لاحقاً بتغيير status إلى closed أو إعادة فتح — الدقة أولاً)
+    if req.status == "fulfilled" and req.fulfilled_at is None:
+        req.fulfilled_at = datetime.now(UTC)
     db.session.commit()
     return jsonify(req.to_dict())
 

@@ -2,11 +2,12 @@
 
 import os
 
+import sqlalchemy as sa
 from flask import Flask, jsonify, render_template
 
 from models.database import database_uri, engine_options
 from models.models import db
-from routes.auth_routes import auth_bp
+from routes.auth_routes import auth_bp, require_role
 from routes.donor_routes import donor_bp
 from routes.emergency_routes import emergency_bp
 from routes.middleware import register_middleware
@@ -70,6 +71,50 @@ def create_app():
         return jsonify({
             "donors": Donor.query.count(),
             "open_emergencies": EmergencyRequest.query.filter_by(status="open").count(),
+        })
+
+    # ---- إحصاءات المشغّل (خارطة المنتَجة أسبوع 2): نداءات، فصائل مطلوبة،
+    # زمن استجابة متوسط. للـadmin فقط — 401 للمجرّد، 403 لأي دور آخر. ----
+    @app.route("/admin/stats")
+    @require_role("admin")
+    def admin_stats():
+        from models.models import Donor, EmergencyRequest
+
+        by_blood: dict[str, int] = {}
+        by_blood_open: dict[str, int] = {}
+        for bt, total, opened in (
+            db.session.query(
+                EmergencyRequest.blood_type,
+                sa.func.count(EmergencyRequest.id),
+                sa.func.sum(sa.case((EmergencyRequest.status == "open", 1), else_=0)),
+            ).group_by(EmergencyRequest.blood_type).all()
+        ):
+            by_blood[bt] = int(total)
+            by_blood_open[bt] = int(opened or 0)
+
+        # زمن استجابة متوسط: (fulfilled_at − created_at) على النداءات المُلبّاة
+        # المختومة فقط — النداءات القديمة بلا ختم لا تزوّر المتوسط.
+        rows = db.session.query(
+            EmergencyRequest.created_at, EmergencyRequest.fulfilled_at
+        ).filter(
+            EmergencyRequest.status == "fulfilled",
+            EmergencyRequest.fulfilled_at.isnot(None),
+        ).all()
+        deltas = [
+            (f - c).total_seconds() / 3600.0
+            for c, f in rows if f >= c
+        ]
+        avg_response_hours = round(sum(deltas) / len(deltas), 2) if deltas else None
+
+        return jsonify({
+            "requests_total": sum(by_blood.values()),
+            "requests_open": sum(by_blood_open.values()),
+            "requests_fulfilled": EmergencyRequest.query.filter_by(status="fulfilled").count(),
+            "requests_by_blood_type": by_blood,
+            "open_by_blood_type": by_blood_open,
+            "avg_response_hours": avg_response_hours,
+            "donors_total": Donor.query.count(),
+            "donors_available": Donor.query.filter_by(available=True).count(),
         })
 
     # Liveness: the process answers, with or without a database. A healthcheck
