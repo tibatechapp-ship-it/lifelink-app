@@ -7,7 +7,7 @@ cryptography>=41.0
 pydantic>=2.7,<3
 # ── production ──
 # Alembic owns the Postgres schema (migrations/); sqlite dev/tests use create_all.
-alembic>=1.13,<2
+alembic>=1.20.1,<2
 # psycopg3 (binary wheels, no libpq headers needed). The app rewrites
 # postgres:// and postgresql:// to postgresql+psycopg:// — see models/database.py.
 psycopg[binary]>=3.2,<4
